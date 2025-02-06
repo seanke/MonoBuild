@@ -1,4 +1,6 @@
-﻿namespace MapToFbx.Map;
+﻿using System.IO;
+
+namespace MonoBuild.Map;
 
 /// <summary>
 /// Defines the structure for a sector, including its geometry, appearance, and special attributes.

@@ -1,74 +1,50 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using System;
+using System.IO;
 using Microsoft.Xna.Framework.Input;
+using MonoBuild.Map;
+using MonoBuild.Player;
 
 namespace MonoBuild;
 
 public class Game : Microsoft.Xna.Framework.Game
 {
-    private GraphicsDeviceManager _graphics;
-    private SpriteBatch _spriteBatch;
-
-    #region TUT
-    Texture2D ballTexture;
-    Vector2 ballPosition;
-    float ballSpeed;
-    #endregion
+    private MapRenderer _mapRenderer;
+    private Camera _camera;
 
     public Game()
     {
-        _graphics = new GraphicsDeviceManager(this);
+        var graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
-        IsMouseVisible = true;
+        IsMouseVisible = false; // Hide mouse for better FPS controls
+
+        IsFixedTimeStep = true; // Locks game loop to a fixed interval
+        TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 60.0); // 60 FPS
+        graphics.SynchronizeWithVerticalRetrace = true; // Enables VSync
     }
 
     protected override void Initialize()
     {
-        #region TUT
-
-        ballPosition = new Vector2(
-            _graphics.PreferredBackBufferWidth / 2f,
-            _graphics.PreferredBackBufferHeight / 2f
-        );
-        ballSpeed = 100f;
-        #endregion
+        _mapRenderer = new MapRenderer(GraphicsDevice);
+        _camera = new Camera(GraphicsDevice, new Vector3(0, 5, 10));
+        GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
 
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
-        _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-        #region TUT
-        ballTexture = Content.Load<Texture2D>("ball");
-        #endregion
+        MapState.LoadMapFromFile(new FileInfo("E1L1.MAP"));
+        _mapRenderer.LoadContent();
     }
 
     protected override void Update(GameTime gameTime)
     {
-        if (
-            GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
-            || Keyboard.GetState().IsKeyDown(Keys.Escape)
-        )
+        // Exit if ESC is pressed
+        if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        #region TUT
-
-        var updateBallSpeed = ballSpeed * (float)gameTime.ElapsedGameTime.TotalSeconds;
-        var keyboardState = Keyboard.GetState();
-
-        if (keyboardState.IsKeyDown(Keys.Up))
-            ballPosition.Y -= updateBallSpeed;
-        if (keyboardState.IsKeyDown(Keys.Down))
-            ballPosition.Y += updateBallSpeed;
-        if (keyboardState.IsKeyDown(Keys.Left))
-            ballPosition.X -= updateBallSpeed;
-        if (keyboardState.IsKeyDown(Keys.Right))
-            ballPosition.X += updateBallSpeed;
-
-        #endregion
+        // Update camera movement & rotation
+        _camera.Update(gameTime);
 
         base.Update(gameTime);
     }
@@ -77,21 +53,8 @@ public class Game : Microsoft.Xna.Framework.Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        #region TUT
-        _spriteBatch.Begin();
-        _spriteBatch.Draw(
-            ballTexture,
-            ballPosition,
-            null,
-            Color.White,
-            0f,
-            new Vector2(ballTexture.Width / 2f, ballTexture.Height / 2f),
-            Vector2.One * 5,
-            SpriteEffects.None,
-            0f
-        );
-        _spriteBatch.End();
-        #endregion
+        // Pass the camera's view and projection to the renderer
+        _mapRenderer.Draw(_camera.View, _camera.Projection);
 
         base.Draw(gameTime);
     }
