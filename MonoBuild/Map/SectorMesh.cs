@@ -11,8 +11,6 @@ public class SectorMesh(GraphicsDevice graphicsDevice) : IDisposable
     private IndexBuffer _indexBuffer;
     private BasicEffect _effect;
 
-    private const float BuildHeightUnitMeterRatio = 0.01905f;
-
     private Tess GetTessellatedSector(RawSector sector)
     {
         var walls = MapState.GetSectorWalls(sector).ToArray();

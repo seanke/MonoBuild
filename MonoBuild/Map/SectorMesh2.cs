@@ -14,8 +14,6 @@ namespace MonoBuild.Map
         private BasicEffect _effect;
         private GraphicsDevice graphicsDevice;
 
-        private const float BuildHeightUnitMeterRatio = 0.01905f;
-
         public SectorMesh2(GraphicsDevice graphicsDevice)
         {
             this.graphicsDevice = graphicsDevice;
