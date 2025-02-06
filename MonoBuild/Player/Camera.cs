@@ -13,8 +13,8 @@ public class Camera
     public Matrix View { get; private set; }
     public Matrix Projection { get; private set; }
 
-    private float yaw; // Rotation around Y-axis (left/right)
-    private float pitch; // Rotation around X-axis (up/down)
+    public float Yaw; // Rotation around Y-axis (left/right)
+    public float Pitch; // Rotation around X-axis (up/down)
 
     private const float MouseSensitivity = 0.002f;
     private const float MoveSpeed = 500f;
@@ -29,8 +29,8 @@ public class Camera
         Position = startPosition;
 
         // Set default orientation
-        yaw = MathHelper.PiOver2; // Face forward
-        pitch = 0f; // Level pitch
+        Yaw = MathHelper.PiOver2; // Face forward
+        Pitch = 0f; // Level pitch
 
         UpdateVectors();
         UpdateView();
@@ -49,17 +49,20 @@ public class Camera
     {
         // Convert yaw & pitch to a directional vector
         Forward = new Vector3(
-            (float)Math.Cos(yaw) * (float)Math.Cos(pitch),
-            (float)Math.Sin(pitch),
-            (float)Math.Sin(yaw) * (float)Math.Cos(pitch)
+            (float)Math.Cos(Yaw) * (float)Math.Cos(Pitch),
+            (float)Math.Sin(Pitch),
+            (float)Math.Sin(Yaw) * (float)Math.Cos(Pitch)
         );
         Forward = Vector3.Normalize(Forward);
 
-        // Right is perpendicular to forward (strafe direction)
-        Right = Vector3.Normalize(Vector3.Cross(Forward, Vector3.Up));
+        // Instead of using world Up in Right calculation, use a fixed up axis
+        Vector3 worldUp = Vector3.Up;
 
-        // Up vector (recalculated to prevent drifting)
-        Up = Vector3.Normalize(Vector3.Cross(Right, Forward));
+        // Calculate Right (perpendicular to Forward and world up)
+        Right = Vector3.Normalize(Vector3.Cross(worldUp, Forward));
+
+        // Up is strictly perpendicular to Forward and Right, preventing roll
+        Up = Vector3.Normalize(Vector3.Cross(Forward, Right));
     }
 
     private void UpdateView()
@@ -83,11 +86,11 @@ public class Camera
         float deltaY = mouseState.Y - _prevMouseState.Y;
 
         // Apply sensitivity & adjust yaw/pitch
-        yaw += deltaX * MouseSensitivity;
-        pitch -= deltaY * MouseSensitivity;
+        Yaw += deltaX * MouseSensitivity;
+        Pitch -= deltaY * MouseSensitivity;
 
         // Clamp pitch to prevent flipping
-        pitch = MathHelper.Clamp(pitch, -MathHelper.PiOver2 + 0.01f, MathHelper.PiOver2 - 0.01f);
+        Pitch = MathHelper.Clamp(Pitch, -MathHelper.PiOver2 + 0.01f, MathHelper.PiOver2 - 0.01f);
 
         // Update direction vectors
         UpdateVectors();

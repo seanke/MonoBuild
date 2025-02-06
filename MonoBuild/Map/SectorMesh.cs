@@ -17,16 +17,9 @@ public class SectorMesh(GraphicsDevice graphicsDevice) : IDisposable
     {
         var walls = MapState.GetSectorWalls(sector).ToArray();
 
-        // Use the sector's FloorZ as the height for the floor plane.
-        var floorZ = sector.FloorZ * BuildHeightUnitMeterRatio;
-
         // Create a list of points (as Vector3) for the floor.
         var floorPoints = walls
-            .Select(w => new Vector3(
-                w.X * BuildHeightUnitMeterRatio,
-                w.Y * BuildHeightUnitMeterRatio,
-                floorZ
-            ))
+            .Select(w => MapHelper.ConvertDuke3DToMono(new Vector3(w.X, w.Y, sector.FloorZ)))
             .ToList();
 
         // Use LibTessDotNet to triangulate the polygon.

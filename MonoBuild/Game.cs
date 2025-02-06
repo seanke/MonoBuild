@@ -10,6 +10,7 @@ public class Game : Microsoft.Xna.Framework.Game
 {
     private MapRenderer _mapRenderer;
     private Camera _camera;
+    private DebugInformation _debugInformation;
 
     public Game()
     {
@@ -25,7 +26,8 @@ public class Game : Microsoft.Xna.Framework.Game
     protected override void Initialize()
     {
         _mapRenderer = new MapRenderer(GraphicsDevice);
-        _camera = new Camera(GraphicsDevice, new Vector3(0, 5, 10));
+        _camera = new Camera(GraphicsDevice, new Vector3(0, 0, 10));
+        _debugInformation = new DebugInformation(GraphicsDevice, _camera);
         GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
 
         base.Initialize();
@@ -35,6 +37,7 @@ public class Game : Microsoft.Xna.Framework.Game
     {
         MapState.LoadMapFromFile(new FileInfo("E1L1.MAP"));
         _mapRenderer.LoadContent();
+        _debugInformation.LoadContent(Content);
     }
 
     protected override void Update(GameTime gameTime)
@@ -43,7 +46,6 @@ public class Game : Microsoft.Xna.Framework.Game
         if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        // Update camera movement & rotation
         _camera.Update(gameTime);
 
         base.Update(gameTime);
@@ -53,8 +55,8 @@ public class Game : Microsoft.Xna.Framework.Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        // Pass the camera's view and projection to the renderer
         _mapRenderer.Draw(_camera.View, _camera.Projection);
+        _debugInformation.Draw();
 
         base.Draw(gameTime);
     }
