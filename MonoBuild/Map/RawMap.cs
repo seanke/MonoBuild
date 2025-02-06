@@ -56,9 +56,9 @@ public class RawMap
 
     public RawMap()
     {
-        Sectors = new List<RawSector>();
-        Walls = new List<RawWall>();
-        Sprites = new List<RawSprite>();
+        Sectors = [];
+        Walls = [];
+        Sprites = [];
     }
 
     /// <summary>
@@ -82,16 +82,19 @@ public class RawMap
         var numSectors = reader.ReadUInt16();
         map.Sectors = Enumerable
             .Range(0, numSectors)
-            .Select(_ => RawSector.ReadSector(reader))
+            .Select(id => RawSector.ReadSector(reader, id))
             .ToList();
 
         var numWalls = reader.ReadUInt16();
-        map.Walls = Enumerable.Range(0, numWalls).Select(_ => RawWall.ReadWall(reader)).ToList();
+        map.Walls = Enumerable
+            .Range(0, numWalls)
+            .Select(id => RawWall.ReadWall(reader, id))
+            .ToList();
 
         var numSprites = reader.ReadUInt16();
         map.Sprites = Enumerable
             .Range(0, numSprites)
-            .Select(_ => RawSprite.ReadSprite(reader))
+            .Select(id => RawSprite.ReadSprite(reader, id))
             .ToList();
 
         return map;

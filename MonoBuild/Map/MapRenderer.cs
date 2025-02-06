@@ -4,7 +4,7 @@ namespace MonoBuild.Map;
 
 public class MapRenderer(GraphicsDevice graphicsDevice)
 {
-    private List<SectorMesh> _sectorMeshes;
+    private List<SectorMesh2> _sectorMeshes;
 
     public void LoadContent()
     {
@@ -17,7 +17,7 @@ public class MapRenderer(GraphicsDevice graphicsDevice)
 
         foreach (var sector in MapState.LoadedRawMap!.Sectors)
         {
-            var sectorMesh = new SectorMesh(graphicsDevice);
+            var sectorMesh = new SectorMesh2(graphicsDevice);
             sectorMesh.LoadContent(sector);
             _sectorMeshes.Add(sectorMesh);
         }

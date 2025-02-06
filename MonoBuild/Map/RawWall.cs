@@ -90,9 +90,12 @@ public class RawWall
     /// </summary>
     public short Extra { get; private set; }
 
-    public static RawWall ReadWall(BinaryReader reader) =>
+    public int Id { get; set; }
+
+    public static RawWall ReadWall(BinaryReader reader, int id) =>
         new()
         {
+            Id = id,
             X = reader.ReadInt32(),
             Y = reader.ReadInt32(),
             Point2 = reader.ReadInt16(),

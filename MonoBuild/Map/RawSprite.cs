@@ -122,14 +122,17 @@ public class RawSprite
     /// </summary>
     public short Extra { get; private set; }
 
+    public int Id { get; set; }
+
     /// <summary>
     /// Reads and constructs a sprite from a binary reader stream, typically for map loading.
     /// </summary>
     /// <param name="reader">The binary reader to read the sprite data from.</param>
     /// <returns>A new instance of a Sprite populated with data from the binary reader.</returns>
-    public static RawSprite ReadSprite(BinaryReader reader) =>
+    public static RawSprite ReadSprite(BinaryReader reader, int id) =>
         new()
         {
+            Id = id,
             X = reader.ReadInt32(),
             Y = reader.ReadInt32(),
             Z = reader.ReadInt32(),

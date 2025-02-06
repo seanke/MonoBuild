@@ -122,14 +122,17 @@ public class RawSector
     /// </summary>
     public short Extra { get; private set; }
 
+    public int Id { get; set; }
+
     /// <summary>
     /// Reads and constructs a sector from a binary reader stream, typically used for map loading.
     /// </summary>
     /// <param name="reader">The binary reader to read the sector data from.</param>
     /// <returns>A new instance of a Sector populated with data from the binary reader.</returns>
-    public static RawSector ReadSector(BinaryReader reader) =>
+    public static RawSector ReadSector(BinaryReader reader, int id) =>
         new()
         {
+            Id = id,
             WallPtr = reader.ReadInt16(),
             WallNum = reader.ReadInt16(),
             CeilingZ = reader.ReadInt32(),

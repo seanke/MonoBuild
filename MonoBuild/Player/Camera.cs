@@ -13,15 +13,14 @@ public class Camera
     public Matrix View { get; private set; }
     public Matrix Projection { get; private set; }
 
-    public float Yaw; // Rotation around Y-axis (left/right)
-    public float Pitch; // Rotation around X-axis (up/down)
+    public float Yaw { get; private set; }
+    public float Pitch { get; private set; }
 
     private const float MouseSensitivity = 0.002f;
     private const float MoveSpeed = 500f;
-    private const float VerticalSpeed = 2.5f;
 
     private MouseState _prevMouseState;
-    private GraphicsDevice _graphicsDevice;
+    private readonly GraphicsDevice _graphicsDevice;
 
     public Camera(GraphicsDevice graphicsDevice, Vector3 startPosition)
     {
@@ -38,7 +37,7 @@ public class Camera
             MathHelper.PiOver4,
             graphicsDevice.Viewport.AspectRatio,
             0.1f,
-            100000f
+            100000000f
         );
 
         // Center mouse to prevent jumpy movement at start
@@ -111,9 +110,9 @@ public class Camera
         if (keyboard.IsKeyDown(Keys.S))
             moveDirection -= Forward; // Backward
         if (keyboard.IsKeyDown(Keys.A))
-            moveDirection -= Right; // Left
+            moveDirection += Right; // Left
         if (keyboard.IsKeyDown(Keys.D))
-            moveDirection += Right; // Right
+            moveDirection -= Right; // Right
         if (keyboard.IsKeyDown(Keys.Q))
             moveDirection -= Up; // Down
         if (keyboard.IsKeyDown(Keys.E))

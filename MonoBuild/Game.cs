@@ -11,6 +11,7 @@ public class Game : Microsoft.Xna.Framework.Game
     private MapRenderer _mapRenderer;
     private Camera _camera;
     private DebugInformation _debugInformation;
+    private Skybox _skybox;
 
     public Game()
     {
@@ -28,7 +29,7 @@ public class Game : Microsoft.Xna.Framework.Game
         _mapRenderer = new MapRenderer(GraphicsDevice);
         _camera = new Camera(GraphicsDevice, new Vector3(0, 0, 10));
         _debugInformation = new DebugInformation(GraphicsDevice, _camera);
-        GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
+        _skybox = new Skybox(GraphicsDevice);
 
         base.Initialize();
     }
@@ -55,6 +56,10 @@ public class Game : Microsoft.Xna.Framework.Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
+        GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
+        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+        _skybox.Draw(_camera.View, _camera.Projection);
         _mapRenderer.Draw(_camera.View, _camera.Projection);
         _debugInformation.Draw();
 
