@@ -10,12 +10,12 @@ public class MapRenderer(GraphicsDevice graphicsDevice)
     {
         _sectorMeshes = [];
 
-        if (!MapState.IsMapLoaded)
+        if (!State.IsMapLoaded)
             throw new InvalidOperationException("No map is loaded.");
 
-        Console.WriteLine($"Sector count: {MapState.LoadedRawMap!.Sectors.Count}");
+        Console.WriteLine($"Sector count: {State.LoadedRawMap!.Sectors.Count}");
 
-        foreach (var sector in MapState.LoadedRawMap!.Sectors)
+        foreach (var sector in State.LoadedRawMap!.Sectors)
         {
             var sectorMesh = new SectorMesh2(graphicsDevice);
             sectorMesh.LoadContent(sector);

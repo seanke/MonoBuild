@@ -36,7 +36,15 @@ public class Game : Microsoft.Xna.Framework.Game
 
     protected override void LoadContent()
     {
-        MapState.LoadMapFromFile(new FileInfo("E1L1.MAP"));
+        State.LoadGroupFromFile(new FileInfo("DUKE3D.GRP"));
+        var group = State.LoadedRawGroup;
+
+        if (group == null)
+            throw new Exception("Failed to load group file.");
+
+        //State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
+        State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L6.MAP").Data);
+
         _mapRenderer.LoadContent();
         _debugInformation.LoadContent(Content);
     }

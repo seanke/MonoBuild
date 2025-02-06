@@ -22,7 +22,7 @@ namespace MonoBuild.Map
         // Tessellate the floor polygon (all vertices on sector.FloorZ).
         private Tess GetTessellatedSector(RawSector sector)
         {
-            var walls = MapState.GetSectorWalls(sector).ToArray();
+            var walls = State.GetSectorWalls(sector).ToArray();
 
             // Create a list of points (as Vector3) for the floor.
             var floorPoints = walls
@@ -56,7 +56,7 @@ namespace MonoBuild.Map
 
         public void LoadContent(RawSector sector)
         {
-            var walls = MapState.GetSectorWalls(sector).ToArray();
+            var walls = State.GetSectorWalls(sector).ToArray();
             if (walls.Length < 3)
                 return; // At least three points are needed.
 

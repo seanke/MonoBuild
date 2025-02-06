@@ -13,7 +13,7 @@ public class SectorMesh(GraphicsDevice graphicsDevice) : IDisposable
 
     private Tess GetTessellatedSector(RawSector sector)
     {
-        var walls = MapState.GetSectorWalls(sector).ToArray();
+        var walls = State.GetSectorWalls(sector).ToArray();
 
         // Create a list of points (as Vector3) for the floor.
         var floorPoints = walls
@@ -47,7 +47,7 @@ public class SectorMesh(GraphicsDevice graphicsDevice) : IDisposable
 
     public void LoadContent(RawSector sector)
     {
-        var walls = MapState.GetSectorWalls(sector).ToArray();
+        var walls = State.GetSectorWalls(sector).ToArray();
         if (walls.Length < 3)
             return; // We need at least three points to form a floor polygon
 

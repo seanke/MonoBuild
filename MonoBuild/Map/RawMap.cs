@@ -99,4 +99,10 @@ public class RawMap
 
         return map;
     }
+
+    public static RawMap LoadFromBytes(byte[] mapData)
+    {
+        using var stream = new MemoryStream(mapData);
+        return LoadFromStream(stream);
+    }
 }
