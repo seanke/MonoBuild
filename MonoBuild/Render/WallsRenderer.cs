@@ -1,9 +1,9 @@
 using System;
 using MonoBuild.Map;
 
-namespace MonoBuild.Mesh;
+namespace MonoBuild.Render;
 
-public class WallMesh(GraphicsDevice graphicsDevice, RawWall wall) : IDisposable
+public class WallsRenderer(GraphicsDevice graphicsDevice, RawSector sector) : IDisposable
 {
     public void LoadContent() { }
 

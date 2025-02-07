@@ -2,7 +2,7 @@ using System;
 
 namespace MonoBuild.Render;
 
-public class MapRenderer(GraphicsDevice graphicsDevice)
+public class MapRenderer(GraphicsDevice graphicsDevice) : IDisposable
 {
     private List<SectorRenderer> _sectorMeshes;
 
@@ -29,5 +29,10 @@ public class MapRenderer(GraphicsDevice graphicsDevice)
         {
             sectorMesh.Draw(viewMatrix, projectionMatrix);
         }
+    }
+
+    public void Dispose()
+    {
+        _sectorMeshes.ForEach(sectorMesh => sectorMesh.Dispose());
     }
 }

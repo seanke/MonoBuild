@@ -74,4 +74,10 @@ public class Game : Microsoft.Xna.Framework.Game
 
         base.Draw(gameTime);
     }
+
+    protected override void Dispose(bool disposing)
+    {
+        _mapRenderer.Dispose();
+        base.Dispose(disposing);
+    }
 }
