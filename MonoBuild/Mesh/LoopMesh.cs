@@ -21,13 +21,6 @@ public class LoopMesh(GraphicsDevice graphicsDevice, RawSector sector, List<RawW
 
         var tile = State.LoadedGroupArt.Tiles[sector.FloorPicnum];
 
-        if (wallLoop.Count > 1)
-        {
-            Console.WriteLine(
-                $"Sector {sector.Id} has {wallLoop.Count} wall loops, using the first one."
-            );
-        }
-
         var tessellatedSector = MeshHelper.GetTessellatedSectorWallLoop(wallLoop, sector.FloorZ);
 
         if (tessellatedSector == null)
