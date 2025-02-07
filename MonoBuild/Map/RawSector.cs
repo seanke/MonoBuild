@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Linq;
 
 namespace MonoBuild.Map;
 
@@ -129,8 +131,9 @@ public class RawSector
     /// </summary>
     /// <param name="reader">The binary reader to read the sector data from.</param>
     /// <returns>A new instance of a Sector populated with data from the binary reader.</returns>
-    public static RawSector ReadSector(BinaryReader reader, int id) =>
-        new()
+    public static RawSector ReadSector(BinaryReader reader, int id)
+    {
+        var sector = new RawSector
         {
             Id = id,
             WallPtr = reader.ReadInt16(),
@@ -157,4 +160,54 @@ public class RawSector
             Hitag = reader.ReadInt16(),
             Extra = reader.ReadInt16()
         };
+        return sector;
+    }
+
+    private static List<RawWall> GetSectorWalls(RawSector sector)
+    {
+        if (!State.IsMapLoaded)
+            throw new Exception("No map is loaded.");
+
+        var result = new List<RawWall>();
+
+        if (
+            State.LoadedRawMap?.Walls == null
+            || sector.WallPtr < 0
+            || sector.WallPtr >= State.LoadedRawMap.Walls.Count
+        )
+            return result;
+
+        var walls = State.LoadedRawMap.Walls.Skip(sector.WallPtr).Take(sector.WallNum);
+
+        return walls.ToList();
+    }
+
+    public static List<List<RawWall>> GetSectorWallLoops(RawSector sector)
+    {
+        if (!State.IsMapLoaded)
+            throw new Exception("No map is loaded.");
+
+        var result = new List<List<RawWall>>();
+
+        var walls = GetSectorWalls(sector);
+
+        foreach (var wall in walls)
+        {
+            if (result.Any(loop => loop.Contains(wall)))
+                continue;
+
+            var loop = new List<RawWall> { wall };
+            var currentWall = wall;
+
+            do
+            {
+                loop.Add(currentWall);
+                currentWall = State.LoadedRawMap.Walls[currentWall.Point2];
+            } while (currentWall.Point2 != wall.Point2);
+
+            result.Add(loop);
+        }
+
+        return result;
+    }
 }

@@ -78,7 +78,7 @@ public static class State
         }
         catch (Exception ex)
         {
-            return false;
+            throw new Exception("Failed to load map from file.", ex);
         }
     }
 

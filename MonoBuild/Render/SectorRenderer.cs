@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using MonoBuild.Map;
 using MonoBuild.Mesh;
 
@@ -13,8 +12,7 @@ public class SectorRenderer(GraphicsDevice graphicsDevice) : IDisposable
 
     public void LoadContent(RawSector sector)
     {
-        var walls = MapHelper.GetSectorWalls(sector).ToArray();
-        if (walls.Length < 3)
+        if (sector.WallNum < 3)
         {
             Console.WriteLine($"Sector {sector.Id} has less than 3 walls.");
             return; // We need at least three points to form a floor polygon

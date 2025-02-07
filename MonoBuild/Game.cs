@@ -58,6 +58,9 @@ public class Game : Microsoft.Xna.Framework.Game
         State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
         //State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);
 
+        if (State.LoadedRawMap == null)
+            throw new Exception("Failed to load map file.");
+
         _mapRenderer.LoadContent();
         _debugInformation.LoadContent(Content);
     }
