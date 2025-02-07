@@ -31,7 +31,7 @@ public class FloorMesh(GraphicsDevice graphicsDevice, RawSector sector) : IDispo
                 new Vector3(v.Position.X, v.Position.Y, v.Position.Z),
                 new Vector2(
                     v.Position.X / tileWidth + (sector.FloorXpanning / (float)tileWidth),
-                    v.Position.Z / tileHeight + (sector.FloorYpanning / (float)tileHeight) // Flip Y if necessary
+                    v.Position.Z / tileHeight + (sector.FloorYpanning / (float)tileHeight)
                 )
             ))
             .ToArray();

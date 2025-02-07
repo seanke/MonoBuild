@@ -8,7 +8,7 @@ public static class MeshHelper
 {
     public static Tess GetTessellatedSector(RawSector sector, int height)
     {
-        var walls = State.GetSectorWalls(sector).ToArray();
+        var walls = MapHelper.GetSectorWalls(sector).ToArray();
 
         // Create a list of points (as Vector3) for the floor.
         var floorPoints = walls

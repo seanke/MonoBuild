@@ -13,7 +13,7 @@ public class SectorRenderer(GraphicsDevice graphicsDevice) : IDisposable
 
     public void LoadContent(RawSector sector)
     {
-        var walls = State.GetSectorWalls(sector).ToArray();
+        var walls = MapHelper.GetSectorWalls(sector).ToArray();
         if (walls.Length < 3)
         {
             Console.WriteLine($"Sector {sector.Id} has less than 3 walls.");

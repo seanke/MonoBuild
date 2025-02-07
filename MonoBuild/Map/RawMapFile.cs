@@ -42,24 +42,21 @@ public class RawMapFile
     /// <summary>
     /// A list of Sector objects, each representing a sector in the map. Sectors are distinct areas or rooms.
     /// </summary>
-    public List<RawSector> Sectors { get; set; }
+    public List<RawSector> Sectors { get; private set; } = [];
 
     /// <summary>
     /// A list of Wall objects, with each wall defining boundaries of sectors or obstacles within the map.
     /// </summary>
-    public List<RawWall> Walls { get; set; }
+    public List<RawWall> Walls { get; private set; } = [];
 
     /// <summary>
     /// A list of Sprite objects, representing items, enemies, or other interactable objects in the map.
     /// </summary>
-    public List<RawSprite> Sprites { get; set; }
+    public List<RawSprite> Sprites { get; set; } = [];
 
-    public RawMapFile()
-    {
-        Sectors = [];
-        Walls = [];
-        Sprites = [];
-    }
+    public int NumSectors { get; private set; }
+    public int NumWalls { get; private set; }
+    public int NumSprites { get; private set; }
 
     /// <summary>
     /// Loads a map from a given stream, reading its content and constructing the map file structure.
@@ -80,18 +77,21 @@ public class RawMapFile
         map.CurSectNum = reader.ReadInt16();
 
         var numSectors = reader.ReadUInt16();
+        map.NumSectors = numSectors;
         map.Sectors = Enumerable
             .Range(0, numSectors)
             .Select(id => RawSector.ReadSector(reader, id))
             .ToList();
 
         var numWalls = reader.ReadUInt16();
+        map.NumWalls = numWalls;
         map.Walls = Enumerable
             .Range(0, numWalls)
             .Select(id => RawWall.ReadWall(reader, id))
             .ToList();
 
         var numSprites = reader.ReadUInt16();
+        map.NumSprites = numSprites;
         map.Sprites = Enumerable
             .Range(0, numSprites)
             .Select(id => RawSprite.ReadSprite(reader, id))

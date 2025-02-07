@@ -55,8 +55,8 @@ public class Game : Microsoft.Xna.Framework.Game
         _debug = new Debug(GraphicsDevice);
         _debug.LoadContent();
 
-        //State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
-        State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);
+        State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
+        //State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);
 
         _mapRenderer.LoadContent();
         _debugInformation.LoadContent(Content);
