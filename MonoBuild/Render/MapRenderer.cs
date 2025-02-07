@@ -1,10 +1,10 @@
 using System;
 
-namespace MonoBuild.Map;
+namespace MonoBuild.Render;
 
 public class MapRenderer(GraphicsDevice graphicsDevice)
 {
-    private List<SectorMesh2> _sectorMeshes;
+    private List<SectorRenderer> _sectorMeshes;
 
     public void LoadContent()
     {
@@ -17,7 +17,7 @@ public class MapRenderer(GraphicsDevice graphicsDevice)
 
         foreach (var sector in State.LoadedRawMap!.Sectors)
         {
-            var sectorMesh = new SectorMesh2(graphicsDevice);
+            var sectorMesh = new SectorRenderer(graphicsDevice);
             sectorMesh.LoadContent(sector);
             _sectorMeshes.Add(sectorMesh);
         }

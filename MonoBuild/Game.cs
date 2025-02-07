@@ -3,6 +3,7 @@ using System.IO;
 using Microsoft.Xna.Framework.Input;
 using MonoBuild.Map;
 using MonoBuild.Player;
+using MonoBuild.Render;
 
 namespace MonoBuild;
 
@@ -43,7 +44,7 @@ public class Game : Microsoft.Xna.Framework.Game
             throw new Exception("Failed to load group file.");
 
         //State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
-        State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L6.MAP").Data);
+        State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);
 
         _mapRenderer.LoadContent();
         _debugInformation.LoadContent(Content);
