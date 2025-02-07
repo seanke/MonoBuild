@@ -7,7 +7,7 @@ namespace MonoBuild.Map;
 /// <summary>
 /// Represents a map file containing all the data needed to define a map, including sectors, walls, and sprites.
 /// </summary>
-public class RawMap
+public class RawMapFile
 {
     /// <summary>
     /// The version number of the map file format. Different versions may have different features or limits.
@@ -54,7 +54,7 @@ public class RawMap
     /// </summary>
     public List<RawSprite> Sprites { get; set; }
 
-    public RawMap()
+    public RawMapFile()
     {
         Sectors = [];
         Walls = [];
@@ -66,9 +66,9 @@ public class RawMap
     /// </summary>
     /// <param name="stream">The stream to load the map from.</param>
     /// <returns>A new MapFile instance populated with the data from the stream.</returns>
-    public static RawMap LoadFromStream(Stream stream)
+    public static RawMapFile LoadFromStream(Stream stream)
     {
-        var map = new RawMap();
+        var map = new RawMapFile();
 
         using var reader = new BinaryReader(stream, Encoding.Default, leaveOpen: true);
 
@@ -100,7 +100,7 @@ public class RawMap
         return map;
     }
 
-    public static RawMap LoadFromBytes(byte[] mapData)
+    public static RawMapFile LoadFromBytes(byte[] mapData)
     {
         using var stream = new MemoryStream(mapData);
         return LoadFromStream(stream);

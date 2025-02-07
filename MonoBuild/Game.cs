@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Microsoft.Xna.Framework.Input;
+using MonoBuild.Art;
 using MonoBuild.Map;
 using MonoBuild.Player;
 using MonoBuild.Render;
@@ -42,6 +43,17 @@ public class Game : Microsoft.Xna.Framework.Game
 
         if (group == null)
             throw new Exception("Failed to load group file.");
+
+        foreach (var file in group.Lumps)
+        {
+            Console.WriteLine($"Loaded {file.FileName} ({file.Data.Length} bytes)");
+
+            if (file.FileName.EndsWith(".ART"))
+            {
+                var art = RawArtFile.LoadFromBytes(file.Data);
+                Console.WriteLine("ART file loaded with {0} tiles.", art.Tiles.Count);
+            }
+        }
 
         //State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
         State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);

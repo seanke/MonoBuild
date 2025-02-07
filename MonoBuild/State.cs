@@ -8,7 +8,7 @@ namespace MonoBuild;
 public static class State
 {
     public static bool IsMapLoaded { get; private set; }
-    public static RawMap? LoadedRawMap { get; private set; }
+    public static RawMapFile? LoadedRawMap { get; private set; }
 
     public static bool IsGroupLoaded { get; private set; }
     public static RawGroup? LoadedRawGroup { get; private set; }
@@ -39,7 +39,7 @@ public static class State
         Unload();
         try
         {
-            LoadedRawMap = RawMap.LoadFromBytes(mapData);
+            LoadedRawMap = RawMapFile.LoadFromBytes(mapData);
 
             if (LoadedRawMap == null)
                 throw new Exception("Failed to load map from bytes.");
@@ -58,7 +58,7 @@ public static class State
         Unload();
         try
         {
-            LoadedRawMap = RawMap.LoadFromStream(
+            LoadedRawMap = RawMapFile.LoadFromStream(
                 filePath.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None)
             );
 
