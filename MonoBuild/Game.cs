@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using Microsoft.Xna.Framework.Input;
-using MonoBuild.Art;
-using MonoBuild.Map;
 using MonoBuild.Player;
 using MonoBuild.Render;
 
@@ -14,6 +12,8 @@ public class Game : Microsoft.Xna.Framework.Game
     private Camera _camera;
     private DebugInformation _debugInformation;
     private Skybox _skybox;
+
+    private Debug _debug;
 
     public Game()
     {
@@ -39,21 +39,21 @@ public class Game : Microsoft.Xna.Framework.Game
     protected override void LoadContent()
     {
         State.LoadGroupFromFile(new FileInfo("DUKE3D.GRP"));
-        var group = State.LoadedRawGroup;
 
+        var group = State.LoadedRawGroup;
         if (group == null)
             throw new Exception("Failed to load group file.");
 
-        foreach (var file in group.Lumps)
-        {
-            Console.WriteLine($"Loaded {file.FileName} ({file.Data.Length} bytes)");
+        var art = State.LoadedGroupArt;
+        if (art == null)
+            throw new Exception("Failed to load group art.");
 
-            if (file.FileName.EndsWith(".ART"))
-            {
-                var art = RawArtFile.LoadFromBytes(file.Data);
-                Console.WriteLine("ART file loaded with {0} tiles.", art.Tiles.Count);
-            }
-        }
+        var palette = State.LoadedPaletteFile;
+        if (palette == null)
+            throw new Exception("Failed to load palette file.");
+
+        _debug = new Debug(GraphicsDevice);
+        _debug.LoadContent();
 
         //State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
         State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);
@@ -83,6 +83,8 @@ public class Game : Microsoft.Xna.Framework.Game
         _skybox.Draw(_camera.View, _camera.Projection);
         _mapRenderer.Draw(_camera.View, _camera.Projection);
         _debugInformation.Draw();
+
+        //_debug.Draw();
 
         base.Draw(gameTime);
     }

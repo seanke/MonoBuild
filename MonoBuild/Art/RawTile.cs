@@ -59,7 +59,7 @@ public class RawTile
         tile.XOffset = reader.ReadInt16();
         tile.YOffset = reader.ReadInt16();
 
-        int pixelDataSize = tile.Width * tile.Height;
+        var pixelDataSize = tile.Width * tile.Height;
         tile.PixelData = reader.ReadBytes(pixelDataSize);
 
         return tile;

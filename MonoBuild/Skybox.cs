@@ -40,7 +40,7 @@ public class Skybox
         short[] bottomFace = [0, 3, 7, 0, 7, 4]; // Bottom
 
         // Combine all index arrays into a single array
-        short[] indices = frontFace
+        var indices = frontFace
             .Concat(backFace)
             .Concat(leftFace)
             .Concat(rightFace)
@@ -77,7 +77,7 @@ public class Skybox
     public void Draw(Matrix viewMatrix, Matrix projectionMatrix)
     {
         // Remove translation from the view matrix so the skybox stays fixed around the camera
-        Matrix skyboxView = viewMatrix;
+        var skyboxView = viewMatrix;
         skyboxView.Translation = Vector3.Zero; // Prevent movement of the skybox
 
         // Set effect parameters
@@ -86,14 +86,14 @@ public class Skybox
         _effect.Projection = projectionMatrix;
 
         // Disable depth buffer to ensure the skybox renders behind everything
-        DepthStencilState originalDepthState = _graphicsDevice.DepthStencilState;
+        var originalDepthState = _graphicsDevice.DepthStencilState;
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
 
         // Set buffers and draw the skybox
         _graphicsDevice.SetVertexBuffer(_vertexBuffer);
         _graphicsDevice.Indices = _indexBuffer;
 
-        foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+        foreach (var pass in _effect.CurrentTechnique.Passes)
         {
             pass.Apply();
             _graphicsDevice.DrawIndexedPrimitives(

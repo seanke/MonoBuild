@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using MonoBuild.Art;
 using MonoBuild.Group;
 using MonoBuild.Map;
+using MonoBuild.Palette;
 
 namespace MonoBuild;
 
@@ -11,19 +13,25 @@ public static class State
     public static RawMapFile? LoadedRawMap { get; private set; }
 
     public static bool IsGroupLoaded { get; private set; }
-    public static RawGroup? LoadedRawGroup { get; private set; }
+    public static RawGroupFile? LoadedRawGroup { get; private set; }
+
+    public static RawPaletteFile LoadedPaletteFile { get; private set; }
+    public static GroupArt LoadedGroupArt { get; private set; } = new();
 
     public static bool LoadGroupFromFile(FileInfo filePath)
     {
-        Unload();
         try
         {
-            LoadedRawGroup = RawGroup.LoadFromStream(
+            LoadedRawGroup = RawGroupFile.LoadFromStream(
                 filePath.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None)
             );
 
             if (LoadedRawGroup == null)
                 throw new Exception("Failed to load group from file.");
+
+            LoadedGroupArt = GroupArt.Load(LoadedRawGroup);
+
+            LoadedPaletteFile = RawPaletteFile.Load(LoadedRawGroup);
 
             IsGroupLoaded = true;
             return true;
@@ -36,7 +44,7 @@ public static class State
 
     public static bool LoadMapFromBytes(byte[] mapData)
     {
-        Unload();
+        UnloadMap();
         try
         {
             LoadedRawMap = RawMapFile.LoadFromBytes(mapData);
@@ -55,7 +63,7 @@ public static class State
 
     public static bool LoadMapFromFile(FileInfo filePath)
     {
-        Unload();
+        UnloadMap();
         try
         {
             LoadedRawMap = RawMapFile.LoadFromStream(
@@ -74,19 +82,11 @@ public static class State
         }
     }
 
-    public static void Unload()
+    public static void UnloadMap()
     {
         IsMapLoaded = false;
         LoadedRawMap = null;
     }
-
-    /*public static IEnumerable<RawWall> GetSectorWalls(RawSector sector)
-    {
-        if (!IsMapLoaded)
-            throw new InvalidOperationException("No map is loaded.");
-
-        return LoadedRawMap!.Walls.Skip(sector.WallPtr).Take(sector.WallNum);
-    }*/
 
     public static IEnumerable<RawWall> GetSectorWalls(RawSector sector)
     {
@@ -108,7 +108,7 @@ public static class State
             if (!visitedWalls.Add(currentWallIndex))
                 yield break; // Prevent infinite loops in case of incorrect data
 
-            RawWall wall = LoadedRawMap.Walls[currentWallIndex];
+            var wall = LoadedRawMap.Walls[currentWallIndex];
             yield return wall;
 
             currentWallIndex = wall.Point2;

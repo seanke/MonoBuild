@@ -1,5 +1,4 @@
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace MonoBuild.Art;
@@ -45,32 +44,32 @@ public class RawArtFile
         artFile.FirstTile = reader.ReadInt32();
         artFile.LastTile = reader.ReadInt32();
 
-        int tileCount = artFile.LastTile - artFile.FirstTile + 1;
+        var tileCount = artFile.LastTile - artFile.FirstTile + 1;
 
         // Read tile metadata
         var widths = new short[tileCount];
         var heights = new short[tileCount];
         var picanm = new int[tileCount];
 
-        for (int i = 0; i < tileCount; i++)
+        for (var i = 0; i < tileCount; i++)
         {
             widths[i] = reader.ReadInt16();
         }
-        for (int i = 0; i < tileCount; i++)
+        for (var i = 0; i < tileCount; i++)
         {
             heights[i] = reader.ReadInt16();
         }
-        for (int i = 0; i < tileCount; i++)
+        for (var i = 0; i < tileCount; i++)
         {
             picanm[i] = reader.ReadInt32();
         }
 
         // Read tile pixel data
         artFile.Tiles = new List<RawTile>(tileCount);
-        for (int i = 0; i < tileCount; i++)
+        for (var i = 0; i < tileCount; i++)
         {
-            int pixelDataSize = widths[i] * heights[i];
-            byte[] pixelData = reader.ReadBytes(pixelDataSize);
+            var pixelDataSize = widths[i] * heights[i];
+            var pixelData = reader.ReadBytes(pixelDataSize);
 
             artFile.Tiles.Add(
                 new RawTile

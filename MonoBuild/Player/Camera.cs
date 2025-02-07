@@ -55,7 +55,7 @@ public class Camera
         Forward = Vector3.Normalize(Forward);
 
         // Instead of using world Up in Right calculation, use a fixed up axis
-        Vector3 worldUp = Vector3.Up;
+        var worldUp = Vector3.Up;
 
         // Calculate Right (perpendicular to Forward and world up)
         Right = Vector3.Normalize(Vector3.Cross(worldUp, Forward));
@@ -78,7 +78,7 @@ public class Camera
 
     private void HandleMouseLook()
     {
-        MouseState mouseState = Mouse.GetState();
+        var mouseState = Mouse.GetState();
 
         // Get delta movement from last frame
         float deltaX = mouseState.X - _prevMouseState.X;
@@ -100,10 +100,10 @@ public class Camera
 
     private void HandleMovement(GameTime gameTime)
     {
-        KeyboardState keyboard = Keyboard.GetState();
-        float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        var keyboard = Keyboard.GetState();
+        var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        Vector3 moveDirection = Vector3.Zero;
+        var moveDirection = Vector3.Zero;
 
         if (keyboard.IsKeyDown(Keys.W))
             moveDirection += Forward; // Forward

@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using LibTessDotNet;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace MonoBuild.Map;
 
@@ -102,35 +99,35 @@ public class SectorMesh2 : IDisposable
         }
 
         // --- 3. Walls ---
-        for (int i = 0; i < walls.Length; i++)
+        for (var i = 0; i < walls.Length; i++)
         {
-            int next = (i + 1) % walls.Length;
-            Vector3 floorA = MapHelper.ConvertDuke3DToMono(
+            var next = (i + 1) % walls.Length;
+            var floorA = MapHelper.ConvertDuke3DToMono(
                 new Vector3(walls[i].X, walls[i].Y, sector.FloorZ)
             );
-            Vector3 floorB = MapHelper.ConvertDuke3DToMono(
+            var floorB = MapHelper.ConvertDuke3DToMono(
                 new Vector3(walls[next].X, walls[next].Y, sector.FloorZ)
             );
-            Vector3 ceilA = MapHelper.ConvertDuke3DToMono(
+            var ceilA = MapHelper.ConvertDuke3DToMono(
                 new Vector3(walls[i].X, walls[i].Y, sector.CeilingZ)
             );
-            Vector3 ceilB = MapHelper.ConvertDuke3DToMono(
+            var ceilB = MapHelper.ConvertDuke3DToMono(
                 new Vector3(walls[next].X, walls[next].Y, sector.CeilingZ)
             );
 
-            int idxFloorA = vertices.Count;
+            var idxFloorA = vertices.Count;
             vertices.Add(
                 new VertexPositionColor(floorA, Color.Lerp(Color.Red, Color.Blue, floorA.Y))
             );
-            int idxFloorB = vertices.Count;
+            var idxFloorB = vertices.Count;
             vertices.Add(
                 new VertexPositionColor(floorB, Color.Lerp(Color.Red, Color.Blue, floorB.Y))
             );
-            int idxCeilA = vertices.Count;
+            var idxCeilA = vertices.Count;
             vertices.Add(
                 new VertexPositionColor(ceilA, Color.Lerp(Color.Red, Color.Blue, ceilA.Y))
             );
-            int idxCeilB = vertices.Count;
+            var idxCeilB = vertices.Count;
             vertices.Add(
                 new VertexPositionColor(ceilB, Color.Lerp(Color.Red, Color.Blue, ceilB.Y))
             );
@@ -190,7 +187,7 @@ public class SectorMesh2 : IDisposable
         graphicsDevice.SetVertexBuffer(_vertexBuffer);
         graphicsDevice.Indices = _indexBuffer;
 
-        foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
+        foreach (var pass in _effect.CurrentTechnique.Passes)
         {
             pass.Apply();
             graphicsDevice.DrawIndexedPrimitives(

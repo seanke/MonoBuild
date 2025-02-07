@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Text;
 
@@ -8,7 +7,7 @@ namespace MonoBuild.Group;
 /// Represents a GRP (group) file for the Duke3D build engine,
 /// which is a container of multiple lumps (data blocks).
 /// </summary>
-public class RawGroup
+public class RawGroupFile
 {
     /// <summary>
     /// Gets or sets the signature of the group file. Typically "KenSilverman".
@@ -25,7 +24,7 @@ public class RawGroup
     /// </summary>
     public List<RawGroupLump> Lumps { get; set; }
 
-    public RawGroup()
+    public RawGroupFile()
     {
         Lumps = new List<RawGroupLump>();
     }
@@ -37,14 +36,14 @@ public class RawGroup
     /// </summary>
     /// <param name="stream">The stream to load the GRP file from.</param>
     /// <returns>A new RawGroup instance populated with the data from the stream.</returns>
-    public static RawGroup LoadFromStream(Stream stream)
+    public static RawGroupFile LoadFromStream(Stream stream)
     {
-        var group = new RawGroup();
+        var group = new RawGroupFile();
 
         using var reader = new BinaryReader(stream, Encoding.ASCII, leaveOpen: true);
 
         // Read the 12-byte signature.
-        byte[] signatureBytes = reader.ReadBytes(12);
+        var signatureBytes = reader.ReadBytes(12);
         group.Signature = Encoding.ASCII.GetString(signatureBytes).TrimEnd('\0');
 
         // Read the file count (lump count).
@@ -52,12 +51,12 @@ public class RawGroup
 
         // First, read all the file entries.
         var fileEntries = new List<RawGroupLump>();
-        for (int i = 0; i < group.LumpCount; i++)
+        for (var i = 0; i < group.LumpCount; i++)
         {
             var lump = new RawGroupLump();
 
             // Read the filename (12 bytes).
-            byte[] nameBytes = reader.ReadBytes(12);
+            var nameBytes = reader.ReadBytes(12);
             lump.FileName = Encoding.ASCII.GetString(nameBytes).TrimEnd('\0');
 
             // Read the file size (4 bytes).
