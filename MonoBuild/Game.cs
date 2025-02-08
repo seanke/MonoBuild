@@ -56,7 +56,7 @@ public class Game : Microsoft.Xna.Framework.Game
         _debug.LoadContent();
 
         //State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
-        State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E3L8.MAP").Data);
+        State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);
 
         if (State.LoadedRawMap == null)
             throw new Exception("Failed to load map file.");
@@ -82,6 +82,8 @@ public class Game : Microsoft.Xna.Framework.Game
 
         GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+        //GraphicsDevice.RasterizerState = new RasterizerState { FillMode = FillMode.WireFrame };
 
         _skybox.Draw(_camera.View, _camera.Projection);
         _mapRenderer.Draw(_camera.View, _camera.Projection);

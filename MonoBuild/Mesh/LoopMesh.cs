@@ -13,11 +13,16 @@ public class LoopMesh(GraphicsDevice graphicsDevice, RawSector sector, List<RawW
     private BasicEffect _effect;
     private Texture2D _texture;
 
+    private LoopOutlineMesh _loopOutlineMesh;
+
     public void LoadContent()
     {
         // Dispose old buffers if they exist
         _vertexBuffer?.Dispose();
         _indexBuffer?.Dispose();
+
+        _loopOutlineMesh = new LoopOutlineMesh(graphicsDevice, sector, wallLoop);
+        _loopOutlineMesh.LoadContent();
 
         var tile = State.LoadedGroupArt.Tiles[sector.FloorPicnum];
 
@@ -120,6 +125,8 @@ public class LoopMesh(GraphicsDevice graphicsDevice, RawSector sector, List<RawW
                 _indexBuffer.IndexCount / 3
             );
         }
+
+        _loopOutlineMesh.Draw(viewMatrix, projectionMatrix);
     }
 
     public void Dispose()
@@ -127,5 +134,7 @@ public class LoopMesh(GraphicsDevice graphicsDevice, RawSector sector, List<RawW
         _vertexBuffer?.Dispose();
         _indexBuffer?.Dispose();
         _effect?.Dispose();
+        _texture?.Dispose();
+        _loopOutlineMesh?.Dispose();
     }
 }
