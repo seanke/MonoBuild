@@ -67,10 +67,10 @@ public static class MeshHelper
     {
         const float tolerance = 1 / 2560f;
 
-        for (int p = 0; p < points.Count; p++)
+        for (var p = 0; p < points.Count; p++)
         {
-            int prev = (p == 0) ? points.Count - 1 : p - 1;
-            int next = (p == points.Count - 1) ? 0 : p + 1;
+            var prev = (p == 0) ? points.Count - 1 : p - 1;
+            var next = (p == points.Count - 1) ? 0 : p + 1;
 
             // If two neighboring points are equal, remove this one
             if (points[next] == points[prev])
@@ -81,7 +81,7 @@ public static class MeshHelper
             }
 
             // Remove collinear points (same X or Y direction)
-            bool isCollinear =
+            var isCollinear =
                 (
                     Math.Abs(points[prev].X - points[p].X) < tolerance
                     && Math.Abs(points[next].X - points[p].X) < tolerance

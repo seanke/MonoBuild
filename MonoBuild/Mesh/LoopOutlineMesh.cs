@@ -32,7 +32,7 @@ public class LoopOutlineMesh(
     {
         var wallVertices = new List<VertexPositionColor>();
 
-        for (int i = 0; i < wallLoop.Count; i++)
+        for (var i = 0; i < wallLoop.Count; i++)
         {
             var currentWall = wallLoop[i];
             var nextWall = wallLoop.FirstOrDefault(w => w.Id == currentWall.Point2); // Get the next wall
