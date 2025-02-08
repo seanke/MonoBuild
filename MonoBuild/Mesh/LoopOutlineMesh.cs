@@ -46,8 +46,16 @@ public class LoopOutlineMesh(
             start = MapHelper.ConvertDuke3DToMono(start);
             end = MapHelper.ConvertDuke3DToMono(end);
 
-            wallVertices.Add(new VertexPositionColor(start, Color.Red)); // Start point
-            wallVertices.Add(new VertexPositionColor(end, Color.Red)); // End point
+            var isPortal = currentWall.NextWall != -1; // && nextWall.NextWall != -1;
+            var isImpassablePortal = isPortal && (currentWall.CStat & 0x01) != 0;
+
+            var lineColor = isPortal ? Color.Red : Color.White;
+
+            if (isImpassablePortal)
+                lineColor = Color.Purple;
+
+            wallVertices.Add(new VertexPositionColor(start, lineColor)); // Start point
+            wallVertices.Add(new VertexPositionColor(end, lineColor)); // End point
         }
 
         if (wallVertices.Count > 0)
