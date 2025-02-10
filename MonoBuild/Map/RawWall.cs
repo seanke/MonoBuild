@@ -92,6 +92,10 @@ public class RawWall
 
     public int Id { get; set; }
 
+    public bool IsBottomTextureSwapped => (CStat & 2) != 0;
+
+    public bool IsWallAlignedBottom => (CStat & 3) != 0;
+
     public static RawWall ReadWall(BinaryReader reader, int id) =>
         new()
         {

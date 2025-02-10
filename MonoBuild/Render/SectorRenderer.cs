@@ -6,7 +6,7 @@ namespace MonoBuild.Render;
 
 public class SectorRenderer(GraphicsDevice graphicsDevice) : IDisposable
 {
-    private WallsRenderer _wallsRenderer;
+    private WallRenderer _wallRenderer;
     private FloorMesh _floorMesh;
     private CeilingMesh _ceilingMesh;
 
@@ -18,8 +18,8 @@ public class SectorRenderer(GraphicsDevice graphicsDevice) : IDisposable
             return; // We need at least three points to form a floor polygon
         }
 
-        _wallsRenderer = new WallsRenderer(graphicsDevice, sector);
-        _wallsRenderer.LoadContent();
+        //_wallRenderer = new WallRenderer(graphicsDevice, sector);
+        //_wallRenderer.LoadContent();
 
         _floorMesh = new FloorMesh(graphicsDevice, sector);
         _floorMesh.LoadContent();
@@ -30,14 +30,14 @@ public class SectorRenderer(GraphicsDevice graphicsDevice) : IDisposable
 
     public void Draw(Matrix viewMatrix, Matrix projectionMatrix)
     {
-        _wallsRenderer.Draw(viewMatrix, projectionMatrix);
+        //_wallRenderer.Draw(viewMatrix, projectionMatrix);
         _floorMesh.Draw(viewMatrix, projectionMatrix);
         _ceilingMesh.Draw(viewMatrix, projectionMatrix);
     }
 
     public void Dispose()
     {
-        _wallsRenderer.Dispose();
+        //_wallRenderer.Dispose();
         _floorMesh.Dispose();
         _ceilingMesh.Dispose();
     }

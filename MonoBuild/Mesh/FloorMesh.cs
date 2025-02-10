@@ -1,13 +1,14 @@
 using System;
 using System.Linq;
 using MonoBuild.Map;
+using MonoBuild.Render;
 
 namespace MonoBuild.Mesh;
 
 public class FloorMesh(GraphicsDevice graphicsDevice, RawSector sector) : IDisposable
 {
     private List<LoopMesh> _loopMeshes = new();
-    private List<WallMesh> _wallMeshes = new();
+    private List<WallRenderer> _wallsRenderers = new();
 
     public void LoadContent()
     {
@@ -21,13 +22,13 @@ public class FloorMesh(GraphicsDevice graphicsDevice, RawSector sector) : IDispo
 
             foreach (var wall in wallLoop)
             {
-                var nextWall = wallLoop.FirstOrDefault(w => w.Id == wall.Point2);
-                if (nextWall == null)
+                var point2Wall = wallLoop.FirstOrDefault(w => w.Id == wall.Point2);
+                if (point2Wall == null)
                     continue;
 
-                var wallMesh = new WallMesh(graphicsDevice, sector, wall, nextWall);
+                var wallMesh = new WallRenderer(graphicsDevice, sector, wall, point2Wall);
                 wallMesh.LoadContent();
-                _wallMeshes.Add(wallMesh);
+                _wallsRenderers.Add(wallMesh);
             }
         }
     }
@@ -39,9 +40,9 @@ public class FloorMesh(GraphicsDevice graphicsDevice, RawSector sector) : IDispo
             loopMesh.Draw(viewMatrix, projectionMatrix);
         }
 
-        foreach (var wallMesh in _wallMeshes)
+        foreach (var wallsRenderer in _wallsRenderers)
         {
-            wallMesh.Draw(viewMatrix, projectionMatrix);
+            wallsRenderer.Draw(viewMatrix, projectionMatrix);
         }
     }
 
@@ -52,9 +53,9 @@ public class FloorMesh(GraphicsDevice graphicsDevice, RawSector sector) : IDispo
             loopMesh.Dispose();
         }
 
-        foreach (var wallMesh in _wallMeshes)
+        foreach (var wallsRenderer in _wallsRenderers)
         {
-            wallMesh.Dispose();
+            wallsRenderer.Dispose();
         }
     }
 }

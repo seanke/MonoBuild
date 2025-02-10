@@ -29,16 +29,4 @@ public static class TextureHelper
         texture.SetData(colors);
         return texture;
     }
-
-    public static Color[] CreateDefaultPalette()
-    {
-        var palette = new Color[256];
-
-        for (var i = 0; i < 256; i++)
-        {
-            palette[i] = new Color(i, i, i); // Creates a gradient from black to white
-        }
-
-        return palette;
-    }
 }

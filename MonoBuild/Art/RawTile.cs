@@ -23,45 +23,34 @@ public class RawTile
     public short Height { get; set; }
 
     /// <summary>
-    /// The X offset for tile alignment.
-    /// </summary>
-    public short XOffset { get; set; }
-
-    /// <summary>
-    /// The Y offset for tile alignment.
-    /// </summary>
-    public short YOffset { get; set; }
-
-    /// <summary>
     /// The raw pixel data for the tile.
     /// </summary>
-    public byte[] PixelData { get; set; }
+    public byte[] PixelData { get; set; } = [];
 
     public int Picanm { get; set; }
 
-    public RawTile()
-    {
-        PixelData = [];
-    }
+    /// <summary>
+    /// Animation speed extracted from Picanm.
+    /// </summary>
+    public int AnimationSpeed => (Picanm >> 24) & 0xFF;
 
     /// <summary>
-    /// Reads a tile entry from the given binary reader.
+    /// Y-center offset extracted from Picanm.
     /// </summary>
-    /// <param name="reader">The binary reader containing tile data.</param>
-    /// <param name="tileIndex">The tile index.</param>
-    /// <returns>A new RawTile instance populated with the data.</returns>
-    public static RawTile ReadTile(BinaryReader reader, int tileIndex)
-    {
-        var tile = new RawTile { TileIndex = tileIndex };
+    public sbyte YCenterOffset => (sbyte)((Picanm >> 16) & 0xFF);
 
-        tile.Width = reader.ReadInt16();
-        tile.Height = reader.ReadInt16();
-        tile.XOffset = reader.ReadInt16();
-        tile.YOffset = reader.ReadInt16();
+    /// <summary>
+    /// X-center offset extracted from Picanm.
+    /// </summary>
+    public sbyte XCenterOffset => (sbyte)((Picanm >> 8) & 0xFF);
 
-        var pixelDataSize = tile.Width * tile.Height;
-        tile.PixelData = reader.ReadBytes(pixelDataSize);
+    /// <summary>
+    /// Animation number extracted from Picanm.
+    /// </summary>
+    public int AnimationNumber => Picanm & 0xFF;
 
-        return tile;
-    }
+    /// <summary>
+    /// Animation type extracted from Picanm (last 2 bits).
+    /// </summary>
+    public int AnimationType => Picanm & 0x03;
 }
