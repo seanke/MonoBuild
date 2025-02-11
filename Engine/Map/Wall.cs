@@ -95,6 +95,10 @@ public class Wall
     /// An extra value for game-specific use, can hold any additional information needed by the game engine.
     /// </summary>
     internal short RawExtra { get; }
+    
+    public Mesh TopPartMesh { get; private set; }
+    public Mesh BottomPartMesh { get; private set; }
+    public Mesh FullPartMesh { get; private set; }
 
     private readonly MapFile _map;
 

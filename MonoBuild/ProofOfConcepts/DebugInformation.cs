@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework.Content;
 using MonoBuild.Player;
 
-namespace MonoBuild.Pocs;
+namespace MonoBuild.ProofOfConcepts;
 
 public class DebugInformation
 {

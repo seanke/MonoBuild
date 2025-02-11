@@ -128,6 +128,7 @@ public class Sprite
     /// Reads and constructs a sprite from a binary reader stream, typically for map loading.
     /// </summary>
     /// <param name="reader">The binary reader to read the sprite data from.</param>
+    /// <param name="indexInRawSpriteArray"></param>
     /// <param name="map"></param>
     /// <returns>A new instance of a Sprite populated with data from the binary reader.</returns>
     internal Sprite(BinaryReader reader, int indexInRawSpriteArray, MapFile map)

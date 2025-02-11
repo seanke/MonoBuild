@@ -5,7 +5,6 @@ using Engine.Group;
 using Engine.Map;
 using Microsoft.Xna.Framework.Input;
 using MonoBuild.Player;
-using MonoBuild.Pocs;
 using MonoBuild.ProofOfConcepts;
 
 namespace MonoBuild;

@@ -1,4 +1,6 @@
-﻿namespace Engine.Map;
+﻿using System.Collections.Immutable;
+
+namespace Engine.Map;
 
 /// <summary>
 /// Defines the structure for a sector, including its geometry, appearance, and special attributes.
@@ -122,6 +124,11 @@ public class Sector
 
     internal int Id { get; }
 
+    public Mesh FloorMesh { get; private set; }
+    public Mesh CeilingMesh { get; private set; }
+    
+    public ImmutableList<Wall> Walls { get; internal set; }
+
     private readonly MapFile _mapFile;
 
     /// <summary>
@@ -162,7 +169,11 @@ public class Sector
         _mapFile = mapFile;
     }
 
-    private List<Wall> GetSectorWalls(Sector sector)
+    /// <summary>
+    /// Populates the sector's Walls list. It MUST be called after all walls have been read from the map file.
+    /// </summary>
+    /// <returns></returns>
+    private List<Wall> PopulateWallsList()
     {
         var result = new List<Wall>();
 
@@ -174,7 +185,7 @@ public class Sector
         return walls.ToList();
     }
 
-    internal List<List<Wall>> GetSectorWallLoops(Sector sector)
+    private List<List<Wall>> GetSectorWallLoops(Sector sector)
     {
         var result = new List<List<Wall>>();
 

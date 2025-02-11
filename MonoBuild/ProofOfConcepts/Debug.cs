@@ -3,7 +3,7 @@ using Engine.Art;
 using MonoBuild.Loaders;
 using Color = Microsoft.Xna.Framework.Color;
 
-namespace MonoBuild.Pocs;
+namespace MonoBuild.ProofOfConcepts;
 
 public class Debug(GraphicsDevice graphicsDevice) : IDisposable
 {
