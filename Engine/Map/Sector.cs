@@ -1,193 +1,182 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-
-namespace MonoBuild.Map;
+﻿namespace Engine.Map;
 
 /// <summary>
 /// Defines the structure for a sector, including its geometry, appearance, and special attributes.
 /// </summary>
-public class RawSector
+public class Sector
 {
     /// <summary>
     /// Index to the first wall in the sector, used to identify where the sector's wall definitions start.
     /// </summary>
-    public short WallPtr { get; set; }
+    internal short RawWallPtr { get; }
 
     /// <summary>
     /// The number of walls in this sector, determining how many walls are associated with this sector.
     /// </summary>
-    public short WallNum { get; set; }
+    internal short RawWallNum { get; }
 
     /// <summary>
     /// Z-coordinate (height) of the sector's ceiling at its first point.
     /// </summary>
-    public int CeilingZ { get; set; }
+    internal int RawCeilingZ { get; }
 
     /// <summary>
     /// Z-coordinate (height) of the sector's floor at its first point.
     /// </summary>
-    public int FloorZ { get; set; }
+    internal int RawFloorZ { get; }
 
     /// <summary>
     /// Bitfield containing various flags related to the sector's ceiling, such as parallaxing and slope.
     /// </summary>
-    public short CeilingStat { get; set; }
+    internal short RawCeilingStat { get; }
 
     /// <summary>
     /// Bitfield containing various flags related to the sector's floor, such as parallaxing and slope.
     /// </summary>
-    public short FloorStat { get; set; }
+    internal short RawFloorStat { get; }
 
     /// <summary>
     /// Texture index for the ceiling, referencing an entry in an ART file.
     /// </summary>
-    public short CeilingPicnum { get; private set; }
+    internal short RawCeilingPicnum { get; }
 
     /// <summary>
     /// Shade offset for the ceiling, affecting its brightness.
     /// </summary>
-    public sbyte CeilingShade { get; private set; }
+    internal sbyte RawCeilingShade { get; }
 
     /// <summary>
     /// Slope of the ceiling, determining how steep the slope is if the ceiling is sloped.
     /// </summary>
-    public short CeilingHeinum { get; private set; }
+    internal short RawCeilingHeinum { get; }
 
     /// <summary>
     /// Palette number for the ceiling texture, which can change the color palette used.
     /// </summary>
-    public byte CeilingPal { get; private set; }
+    internal byte RawCeilingPal { get; }
 
     /// <summary>
     /// Horizontal panning offset for the ceiling texture, useful for texture alignment.
     /// </summary>
-    public byte CeilingXpanning { get; private set; }
+    internal byte RawCeilingXpanning { get; }
 
     /// <summary>
     /// Vertical panning offset for the ceiling texture, useful for texture alignment.
     /// </summary>
-    public byte CeilingYpanning { get; private set; }
+    internal byte RawCeilingYpanning { get; }
 
     /// <summary>
     /// Texture index for the floor, referencing an entry in an ART file.
     /// </summary>
-    public short FloorPicnum { get; private set; }
+    internal short RawFloorPicnum { get; }
 
     /// <summary>
     /// Slope of the floor, determining how steep the slope is if the floor is sloped.
     /// </summary>
-    public short FloorHeinum { get; private set; }
+    internal short RawFloorHeinum { get; }
 
     /// <summary>
     /// Shade offset for the floor, affecting its brightness.
     /// </summary>
-    public sbyte FloorShade { get; private set; }
+    internal sbyte RawFloorShade { get; }
 
     /// <summary>
     /// Palette number for the floor texture, which can change the color palette used.
     /// </summary>
-    public byte FloorPal { get; private set; }
+    internal byte RawFloorPal { get; }
 
     /// <summary>
     /// Horizontal panning offset for the floor texture, useful for texture alignment.
     /// </summary>
-    public byte FloorXpanning { get; private set; }
+    internal byte RawFloorXpanning { get; }
 
     /// <summary>
     /// Vertical panning offset for the floor texture, useful for texture alignment.
     /// </summary>
-    public byte FloorYpanning { get; private set; }
+    internal byte RawFloorYpanning { get; }
 
     /// <summary>
     /// Affects how quickly sectors fade to darkness with distance. Lower values result in quicker darkening.
     /// </summary>
-    public byte Visibility { get; private set; }
+    internal byte RawVisibility { get; }
 
     /// <summary>
     /// Padding byte, not used for any game logic but necessary for structure alignment.
     /// </summary>
-    public byte Filler { get; private set; }
+    internal byte RawFiller { get; }
 
     /// <summary>
     /// Game-specific use, often for triggering events or actions within the sector.
     /// </summary>
-    public short Lotag { get; private set; }
+    internal short RawLotag { get; }
 
     /// <summary>
     /// Additional tag for game-specific use, similar to Lotag but for different or additional purposes.
     /// </summary>
-    public short Hitag { get; private set; }
+    internal short RawHitag { get; }
 
     /// <summary>
     /// An extra value for game-specific use, can hold any additional information needed by the game engine.
     /// </summary>
-    public short Extra { get; private set; }
+    internal short RawExtra { get; }
 
-    public int Id { get; set; }
+    internal int Id { get; }
+
+    private readonly MapFile _mapFile;
 
     /// <summary>
     /// Reads and constructs a sector from a binary reader stream, typically used for map loading.
     /// </summary>
     /// <param name="reader">The binary reader to read the sector data from.</param>
+    /// <param name="indexInRawSectorsArray"></param>
+    /// <param name="mapFile"></param>
     /// <returns>A new instance of a Sector populated with data from the binary reader.</returns>
-    public static RawSector ReadSector(BinaryReader reader, int id)
+    public Sector(BinaryReader reader, int indexInRawSectorsArray, MapFile mapFile)
     {
-        var sector = new RawSector
-        {
-            Id = id,
-            WallPtr = reader.ReadInt16(),
-            WallNum = reader.ReadInt16(),
-            CeilingZ = reader.ReadInt32(),
-            FloorZ = reader.ReadInt32(),
-            CeilingStat = reader.ReadInt16(),
-            FloorStat = reader.ReadInt16(),
-            CeilingPicnum = reader.ReadInt16(),
-            CeilingHeinum = reader.ReadInt16(),
-            CeilingShade = reader.ReadSByte(),
-            CeilingPal = reader.ReadByte(),
-            CeilingXpanning = reader.ReadByte(),
-            CeilingYpanning = reader.ReadByte(),
-            FloorPicnum = reader.ReadInt16(),
-            FloorHeinum = reader.ReadInt16(),
-            FloorShade = reader.ReadSByte(),
-            FloorPal = reader.ReadByte(),
-            FloorXpanning = reader.ReadByte(),
-            FloorYpanning = reader.ReadByte(),
-            Visibility = reader.ReadByte(),
-            Filler = reader.ReadByte(),
-            Lotag = reader.ReadInt16(),
-            Hitag = reader.ReadInt16(),
-            Extra = reader.ReadInt16()
-        };
-        return sector;
+        RawWallPtr = reader.ReadInt16();
+        RawWallNum = reader.ReadInt16();
+        RawCeilingZ = reader.ReadInt32();
+        RawFloorZ = reader.ReadInt32();
+        RawCeilingStat = reader.ReadInt16();
+        RawFloorStat = reader.ReadInt16();
+        RawCeilingPicnum = reader.ReadInt16();
+        RawCeilingHeinum = reader.ReadInt16();
+        RawCeilingShade = reader.ReadSByte();
+        RawCeilingPal = reader.ReadByte();
+        RawCeilingXpanning = reader.ReadByte();
+        RawCeilingYpanning = reader.ReadByte();
+        RawFloorPicnum = reader.ReadInt16();
+        RawFloorHeinum = reader.ReadInt16();
+        RawFloorShade = reader.ReadSByte();
+        RawFloorPal = reader.ReadByte();
+        RawFloorXpanning = reader.ReadByte();
+        RawFloorYpanning = reader.ReadByte();
+        RawVisibility = reader.ReadByte();
+        RawFiller = reader.ReadByte();
+        RawLotag = reader.ReadInt16();
+        RawHitag = reader.ReadInt16();
+        RawExtra = reader.ReadInt16();
+
+        Id = indexInRawSectorsArray;
+
+        _mapFile = mapFile;
     }
 
-    private static List<RawWall> GetSectorWalls(RawSector sector)
+    private List<Wall> GetSectorWalls(Sector sector)
     {
-        if (!State.IsMapLoaded)
-            throw new Exception("No map is loaded.");
+        var result = new List<Wall>();
 
-        var result = new List<RawWall>();
-
-        if (
-            State.LoadedRawMap?.Walls == null
-            || sector.WallPtr < 0
-            || sector.WallPtr >= State.LoadedRawMap.Walls.Count
-        )
+        if (sector.RawWallPtr < 0 || sector.RawWallPtr >= _mapFile.Walls.Count)
             return result;
 
-        var walls = State.LoadedRawMap.Walls.Skip(sector.WallPtr).Take(sector.WallNum);
+        var walls = _mapFile.Walls.Skip(sector.RawWallPtr).Take(sector.RawWallNum);
 
         return walls.ToList();
     }
 
-    public static List<List<RawWall>> GetSectorWallLoops(RawSector sector)
+    internal List<List<Wall>> GetSectorWallLoops(Sector sector)
     {
-        if (!State.IsMapLoaded)
-            throw new Exception("No map is loaded.");
-
-        var result = new List<List<RawWall>>();
+        var result = new List<List<Wall>>();
 
         var walls = GetSectorWalls(sector);
 
@@ -196,14 +185,14 @@ public class RawSector
             if (result.Any(loop => loop.Contains(wall)))
                 continue;
 
-            var loop = new List<RawWall> { wall };
+            var loop = new List<Wall> { wall };
             var currentWall = wall;
 
             do
             {
                 loop.Add(currentWall);
-                currentWall = State.LoadedRawMap.Walls[currentWall.Point2];
-            } while (currentWall.Point2 != wall.Point2);
+                currentWall = _mapFile.Walls[currentWall.RawPoint2];
+            } while (currentWall.RawPoint2 != wall.RawPoint2);
 
             result.Add(loop);
         }

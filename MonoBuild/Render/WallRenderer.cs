@@ -30,8 +30,8 @@ public class WallRenderer(
     public void Draw(Matrix viewMatrix, Matrix projectionMatrix)
     {
         _wallSolidMesh.Draw(viewMatrix, projectionMatrix);
-        //_wallTopMesh.Draw(viewMatrix, projectionMatrix);
-        //_wallBottomMesh.Draw(viewMatrix, projectionMatrix);
+        _wallTopMesh.Draw(viewMatrix, projectionMatrix);
+        _wallBottomMesh.Draw(viewMatrix, projectionMatrix);
     }
 
     public void Dispose()

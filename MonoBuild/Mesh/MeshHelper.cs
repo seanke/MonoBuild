@@ -11,7 +11,7 @@ public static class MeshHelper
     {
         // Create a list of unique points for the floor.
         var floorPoints = sectorWallLoop
-            .Select(w => MapHelper.ConvertDuke3DToMono(new Vector3(w.X, w.Y, height)))
+            .Select(w => MapHelper.ConvertDuke3DToMono(new Vector3(w.RawX, w.RawY, height)))
             //.Distinct() // Remove duplicates
             .ToList();
 

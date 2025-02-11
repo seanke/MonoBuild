@@ -1,108 +1,96 @@
-﻿using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 
-namespace MonoBuild.Map;
+namespace Engine.Map;
 
 /// <summary>
 /// Represents a map file containing all the data needed to define a map, including sectors, walls, and sprites.
 /// </summary>
-public class RawMapFile
+public class MapFile
 {
     /// <summary>
     /// The version number of the map file format. Different versions may have different features or limits.
     /// </summary>
-    public int MapVersion { get; set; }
+    internal int RawMapVersion { get; }
 
     /// <summary>
     /// The X coordinate of the player's starting position in the map.
     /// </summary>
-    public int PosX { get; set; }
+    internal int RawPosX { get; }
 
     /// <summary>
     /// The Y coordinate of the player's starting position in the map.
     /// </summary>
-    public int PosY { get; set; }
+    internal int RawPosY { get; }
 
     /// <summary>
     /// The Z coordinate (height) of the player's starting position in the map.
     /// </summary>
-    public int PosZ { get; set; }
+    internal int RawPosZ { get; }
 
     /// <summary>
     /// The angle representing the direction the player is facing at the start.
     /// </summary>
-    public short Ang { get; set; }
+    internal short RawAng { get; }
 
     /// <summary>
     /// The sector number where the player starts. This is an index to the Sectors list.
     /// </summary>
-    public short CurSectNum { get; set; }
+    internal short RawCurSectNum { get; }
 
     /// <summary>
     /// A list of Sector objects, each representing a sector in the map. Sectors are distinct areas or rooms.
     /// </summary>
-    public List<RawSector> Sectors { get; private set; } = [];
+    internal List<Sector> Sectors { get; }
 
     /// <summary>
     /// A list of Wall objects, with each wall defining boundaries of sectors or obstacles within the map.
     /// </summary>
-    public List<RawWall> Walls { get; private set; } = [];
+    internal List<Wall> Walls { get; }
 
     /// <summary>
     /// A list of Sprite objects, representing items, enemies, or other interactable objects in the map.
     /// </summary>
-    public List<RawSprite> Sprites { get; set; } = [];
+    internal List<Sprite> Sprites { get; set; }
 
-    public int NumSectors { get; private set; }
-    public int NumWalls { get; private set; }
-    public int NumSprites { get; private set; }
+    internal int NumSectors { get; }
+    internal int NumWalls { get; }
+    internal int NumSprites { get; }
 
     /// <summary>
     /// Loads a map from a given stream, reading its content and constructing the map file structure.
     /// </summary>
     /// <param name="stream">The stream to load the map from.</param>
     /// <returns>A new MapFile instance populated with the data from the stream.</returns>
-    public static RawMapFile LoadFromStream(Stream stream)
+    public MapFile(Stream stream)
     {
-        var map = new RawMapFile();
-
         using var reader = new BinaryReader(stream, Encoding.Default, leaveOpen: true);
 
-        map.MapVersion = reader.ReadInt32();
-        map.PosX = reader.ReadInt32();
-        map.PosY = reader.ReadInt32();
-        map.PosZ = reader.ReadInt32();
-        map.Ang = reader.ReadInt16();
-        map.CurSectNum = reader.ReadInt16();
+        RawMapVersion = reader.ReadInt32();
+        RawPosX = reader.ReadInt32();
+        RawPosY = reader.ReadInt32();
+        RawPosZ = reader.ReadInt32();
+        RawAng = reader.ReadInt16();
+        RawCurSectNum = reader.ReadInt16();
 
         var numSectors = reader.ReadUInt16();
-        map.NumSectors = numSectors;
-        map.Sectors = Enumerable
+        NumSectors = numSectors;
+        Sectors = Enumerable
             .Range(0, numSectors)
-            .Select(id => RawSector.ReadSector(reader, id))
+            .Select(id => new Sector(reader, id, this))
             .ToList();
 
         var numWalls = reader.ReadUInt16();
-        map.NumWalls = numWalls;
-        map.Walls = Enumerable
-            .Range(0, numWalls)
-            .Select(id => RawWall.ReadWall(reader, id))
-            .ToList();
+        NumWalls = numWalls;
+        Walls = Enumerable.Range(0, numWalls).Select(id => new Wall(reader, id, this)).ToList();
 
         var numSprites = reader.ReadUInt16();
-        map.NumSprites = numSprites;
-        map.Sprites = Enumerable
+        NumSprites = numSprites;
+        Sprites = Enumerable
             .Range(0, numSprites)
-            .Select(id => RawSprite.ReadSprite(reader, id))
+            .Select(id => new Sprite(reader, id, this))
             .ToList();
-
-        return map;
     }
 
-    public static RawMapFile LoadFromBytes(byte[] mapData)
-    {
-        using var stream = new MemoryStream(mapData);
-        return LoadFromStream(stream);
-    }
+    public MapFile(byte[] mapData)
+        : this(new MemoryStream(mapData)) { }
 }

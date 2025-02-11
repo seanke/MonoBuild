@@ -4,8 +4,12 @@ using MonoBuild.Map;
 
 namespace MonoBuild.Mesh;
 
-public class WallSolidMesh(GraphicsDevice device, RawSector sector, RawWall wall, RawWall nextWall)
-    : IDisposable
+public class WallSolidMesh(
+    GraphicsDevice device,
+    RawSector sector,
+    RawWall wall,
+    RawWall point2Wall
+) : IDisposable
 {
     private VertexBuffer _vertexBuffer;
     private IndexBuffer _indexBuffer;
@@ -59,33 +63,35 @@ public class WallSolidMesh(GraphicsDevice device, RawSector sector, RawWall wall
         var top = sector.CeilingZ;
         var bottom = sector.FloorZ;
 
-        LoadWallBuffers(sector, bottom, top, ref _vertexBuffer, ref _indexBuffer);
+        LoadWallBuffers(sector, bottom, top);
     }
 
-    private void LoadWallBuffers(
-        RawSector sector,
-        int bottom,
-        int top,
-        ref VertexBuffer vertexBuffer,
-        ref IndexBuffer indexBuffer
-    )
+    private void LoadWallBuffers(RawSector sector, int bottom, int top)
     {
         // Define the four corners of the wall quad
         var wallPoints = new List<Vector3>
         {
-            MapHelper.ConvertDuke3DToMono(new Vector3(wall.X, wall.Y, bottom)),
-            MapHelper.ConvertDuke3DToMono(new Vector3(nextWall.X, nextWall.Y, bottom)),
-            MapHelper.ConvertDuke3DToMono(new Vector3(nextWall.X, nextWall.Y, top)),
-            MapHelper.ConvertDuke3DToMono(new Vector3(wall.X, wall.Y, top))
+            MapHelper.ConvertDuke3DToMono(new Vector3(wall.RawX, wall.RawY, bottom)),
+            MapHelper.ConvertDuke3DToMono(new Vector3(point2Wall.RawX, point2Wall.RawY, bottom)),
+            MapHelper.ConvertDuke3DToMono(new Vector3(point2Wall.RawX, point2Wall.RawY, top)),
+            MapHelper.ConvertDuke3DToMono(new Vector3(wall.RawX, wall.RawY, top))
         };
 
-        var wallHeight = (top - bottom) * -MapHelper.BuildHeightUnitMeterRatio;
-        var wallWidth = Vector2.Distance(
-            new Vector2(wall.X, wall.Y),
-            new Vector2(nextWall.X, nextWall.Y)
-        );
+        var wallHeight = bottom - top;
+        var wallHeightAdjusted = wallHeight * MapHelper.BuildHeightUnitMeterRatio;
 
-        var vertices = CreateVerticesWithTextureMappings(wallPoints, wallHeight, wallWidth, wall);
+        var wallWidth = Vector2.Distance(
+            new Vector2(wall.RawX, wall.RawY),
+            new Vector2(point2Wall.RawX, point2Wall.RawY)
+        );
+        var wallWidthAdjusted = wallWidth * MapHelper.BuildWidthUnitMeterRatio;
+
+        var vertices = CreateVerticesWithTextureMappings(
+            wallPoints,
+            wallHeightAdjusted,
+            wallWidthAdjusted,
+            wall
+        );
 
         // Define indices for two triangles forming the quad
         var indices = new short[]
@@ -99,22 +105,22 @@ public class WallSolidMesh(GraphicsDevice device, RawSector sector, RawWall wall
         };
 
         // Create and set the vertex buffer
-        vertexBuffer = new VertexBuffer(
+        _vertexBuffer = new VertexBuffer(
             device,
             typeof(VertexPositionTexture),
             vertices.Length,
             BufferUsage.WriteOnly
         );
-        vertexBuffer.SetData(vertices);
+        _vertexBuffer.SetData(vertices);
 
         // Create and set the index buffer
-        indexBuffer = new IndexBuffer(
+        _indexBuffer = new IndexBuffer(
             device,
             IndexElementSize.SixteenBits,
             indices.Length,
             BufferUsage.WriteOnly
         );
-        indexBuffer.SetData(indices);
+        _indexBuffer.SetData(indices);
     }
 
     private VertexPositionTexture[] CreateVerticesWithTextureMappings(
@@ -129,25 +135,29 @@ public class WallSolidMesh(GraphicsDevice device, RawSector sector, RawWall wall
         float tileXShift = State.LoadedGroupArt.Tiles[wall.Picnum].XCenterOffset;
 
         var xTextureWidth = _texture.Width;
-        var xWallWidth = wallWidth * MapHelper.BuildWidthUnitMeterRatio;
+        var xWallWidth = wallWidth;
         var xRatio = xWallWidth / xTextureWidth;
         var xRepeat = wall.YRepeat / 8f; // WHY DOES THIS WORK WITH YREPEAT?
         var xScale = xRatio * xRepeat;
 
-        float xOffset = 0;
+        float xOffset = 0; //wall.YPanning;
 
-        if (wall.Id == 1984)
+        if (wall.Id == 793)
             Console.WriteLine("hi");
 
         // HEIGHT AND Y
         var yTextureHeight = _texture.Height;
-        var yRatio = wallHeight / yTextureHeight;
+        var yWallHeight = wallHeight;
+        var yRatio = yWallHeight / yTextureHeight;
         var yRepeat = wall.YRepeat / 8f;
         var yScale = yRatio * yRepeat;
-        float yOffset = 0;
+        var yModRation = wallHeight % yTextureHeight;
+
+        var yPanning = wall.YPanning / 256f + yModRation;
+        float yOffset = yPanning;
 
         // Correct UVs to scale texture properly to wall size
-        var bottomLeftUv = new Vector2(0 + xOffset, yOffset);
+        var bottomLeftUv = new Vector2(xOffset, yOffset);
         var bottomRightUv = new Vector2(xScale + xOffset, 0 + yOffset);
         var topRightUv = new Vector2(xScale + xOffset, yScale + yOffset);
         var topLeftUv = new Vector2(0 + xOffset, yScale + yOffset);
@@ -163,51 +173,26 @@ public class WallSolidMesh(GraphicsDevice device, RawSector sector, RawWall wall
 
     public void Draw(Matrix viewMatrix, Matrix projectionMatrix)
     {
-        DrawWall(viewMatrix, projectionMatrix, _vertexBuffer, _indexBuffer);
-    }
-
-    private void DrawWall(
-        Matrix viewMatrix,
-        Matrix projectionMatrix,
-        VertexBuffer vertexBuffer,
-        IndexBuffer indexBuffer
-    )
-    {
-        if (vertexBuffer == null || indexBuffer == null)
+        if (_vertexBuffer == null || _indexBuffer == null || _effect == null || _texture == null)
             return;
 
         device.SamplerStates[0] = SamplerState.LinearWrap;
 
-        DrawWallPart(viewMatrix, projectionMatrix, vertexBuffer, indexBuffer, _effect, _texture);
-    }
+        _effect.View = viewMatrix;
+        _effect.Projection = projectionMatrix;
+        _effect.Texture = _texture;
 
-    private void DrawWallPart(
-        Matrix viewMatrix,
-        Matrix projectionMatrix,
-        VertexBuffer vertexBuffer,
-        IndexBuffer indexBuffer,
-        BasicEffect effect,
-        Texture2D texture
-    )
-    {
-        if (effect == null || texture == null)
-            return;
+        device.SetVertexBuffer(_vertexBuffer);
+        device.Indices = _indexBuffer;
 
-        effect.View = viewMatrix;
-        effect.Projection = projectionMatrix;
-        effect.Texture = texture;
-
-        device.SetVertexBuffer(vertexBuffer);
-        device.Indices = indexBuffer;
-
-        foreach (var pass in effect.CurrentTechnique.Passes)
+        foreach (var pass in _effect.CurrentTechnique.Passes)
         {
             pass.Apply();
             device.DrawIndexedPrimitives(
                 PrimitiveType.TriangleList,
                 0,
                 0,
-                indexBuffer.IndexCount / 3
+                _indexBuffer.IndexCount / 3
             );
         }
     }

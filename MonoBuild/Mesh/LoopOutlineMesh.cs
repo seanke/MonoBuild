@@ -40,8 +40,8 @@ public class LoopOutlineMesh(
             if (nextWall == null)
                 continue; // Skip if next wall is missing
 
-            var start = new Vector3(currentWall.X, currentWall.Y, sector.FloorZ);
-            var end = new Vector3(nextWall.X, nextWall.Y, sector.FloorZ);
+            var start = new Vector3(currentWall.RawX, currentWall.RawY, sector.FloorZ);
+            var end = new Vector3(nextWall.RawX, nextWall.RawY, sector.FloorZ);
 
             start = MapHelper.ConvertDuke3DToMono(start);
             end = MapHelper.ConvertDuke3DToMono(end);

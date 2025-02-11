@@ -4,7 +4,7 @@ using MonoBuild.Map;
 
 namespace MonoBuild.Mesh;
 
-public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, RawWall nextWall)
+public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, RawWall point2Wall)
     : IDisposable
 {
     private VertexBuffer _vertexBuffer;
@@ -16,8 +16,6 @@ public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, 
     {
         try
         {
-            LoadTopWall();
-
             // Initialize Top wall
             _effect = new BasicEffect(device)
             {
@@ -40,6 +38,8 @@ public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, 
                 State.LoadedPaletteFile.Colors
             );
             _effect.Texture = _texture;
+
+            LoadTopWall();
         }
         catch (Exception ex)
         {
@@ -53,9 +53,6 @@ public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, 
         _vertexBuffer?.Dispose();
         _indexBuffer?.Dispose();
 
-        var top = sector.CeilingZ;
-        var bottom = sector.FloorZ;
-
         var isPortal = wall.NextWall != -1;
 
         if (!isPortal)
@@ -65,39 +62,41 @@ public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, 
         if (nextSector == null)
             return;
 
-        if (nextSector.CeilingZ >= sector.CeilingZ)
+        if (nextSector.CeilingZ <= sector.CeilingZ)
             return;
 
-        bottom = nextSector.CeilingZ;
+        var top = sector.CeilingZ;
+        var bottom = nextSector.CeilingZ;
 
-        LoadWallBuffers(sector, bottom, top, ref _vertexBuffer, ref _indexBuffer);
+        LoadWallBuffers(sector, bottom, top);
     }
 
-    private void LoadWallBuffers(
-        RawSector sector,
-        int bottom,
-        int top,
-        ref VertexBuffer vertexBuffer,
-        ref IndexBuffer indexBuffer
-    )
+    private void LoadWallBuffers(RawSector sector, int bottom, int top)
     {
         // Define the four corners of the wall quad
         var wallPoints = new List<Vector3>
         {
-            MapHelper.ConvertDuke3DToMono(new Vector3(wall.X, wall.Y, bottom)),
-            MapHelper.ConvertDuke3DToMono(new Vector3(nextWall.X, nextWall.Y, bottom)),
-            MapHelper.ConvertDuke3DToMono(new Vector3(nextWall.X, nextWall.Y, top)),
-            MapHelper.ConvertDuke3DToMono(new Vector3(wall.X, wall.Y, top))
+            MapHelper.ConvertDuke3DToMono(new Vector3(wall.RawX, wall.RawY, bottom)),
+            MapHelper.ConvertDuke3DToMono(new Vector3(point2Wall.RawX, point2Wall.RawY, bottom)),
+            MapHelper.ConvertDuke3DToMono(new Vector3(point2Wall.RawX, point2Wall.RawY, top)),
+            MapHelper.ConvertDuke3DToMono(new Vector3(wall.RawX, wall.RawY, top))
         };
 
-        var wallHeight = (top - bottom) * -MapHelper.BuildHeightUnitMeterRatio;
+        var wallHeight = bottom - top;
+        var wallHeightAdjusted = wallHeight * MapHelper.BuildHeightUnitMeterRatio;
+
         var wallWidth = Vector2.Distance(
-            new Vector2(wall.X, wall.Y),
-            new Vector2(nextWall.X, nextWall.Y)
+            new Vector2(wall.RawX, wall.RawY),
+            new Vector2(point2Wall.RawX, point2Wall.RawY)
         );
+        var wallWidthAdjusted = wallWidth * MapHelper.BuildWidthUnitMeterRatio;
 
-        var vertices = CreateVerticesWithTextureMappings(wallPoints, wallHeight, wallWidth, wall);
-
+        var vertices = CreateVerticesWithTextureMappings(
+            wallPoints,
+            wallHeightAdjusted,
+            wallWidthAdjusted,
+            wall
+        );
         // Define indices for two triangles forming the quad
         var indices = new short[]
         {
@@ -110,22 +109,22 @@ public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, 
         };
 
         // Create and set the vertex buffer
-        vertexBuffer = new VertexBuffer(
+        _vertexBuffer = new VertexBuffer(
             device,
             typeof(VertexPositionTexture),
             vertices.Length,
             BufferUsage.WriteOnly
         );
-        vertexBuffer.SetData(vertices);
+        _vertexBuffer.SetData(vertices);
 
         // Create and set the index buffer
-        indexBuffer = new IndexBuffer(
+        _indexBuffer = new IndexBuffer(
             device,
             IndexElementSize.SixteenBits,
             indices.Length,
             BufferUsage.WriteOnly
         );
-        indexBuffer.SetData(indices);
+        _indexBuffer.SetData(indices);
     }
 
     private VertexPositionTexture[] CreateVerticesWithTextureMappings(
@@ -139,52 +138,43 @@ public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, 
         float tileWidth = State.LoadedGroupArt.Tiles[wall.Picnum].Width * 8;
         float tileXShift = State.LoadedGroupArt.Tiles[wall.Picnum].XCenterOffset;
 
-        var xRatio = wallWidth / tileWidth;
-        var xRepeat = wall.XRepeat / 8f;
+        var xTextureWidth = _texture.Width;
+        var xWallWidth = wallWidth;
+        var xRatio = xWallWidth / xTextureWidth;
+        var xRepeat = wall.YRepeat / 8f; // WHY DOES THIS WORK WITH YREPEAT?
         var xScale = xRatio * xRepeat;
 
-        float xOffset = 0;
-        if (wall.XPanning != 0)
-            xOffset += wall.XPanning / 256f;
+        var xOffset = 0f + wall.XPanning / 256f; //wall.YPanning;
 
-        if (tileXShift != 0)
-            xOffset += tileXShift / 256f;
-
-        var texture = State.LoadedGroupArt.Tiles[wall.Picnum];
-
-        if (wall.IsBottomTextureSwapped)
-            texture = State.LoadedGroupArt.Tiles[State.LoadedRawMap.Walls[wall.NextWall].Picnum];
+        if (wall.Id == 795)
+            Console.WriteLine("hi");
 
         // HEIGHT AND Y
-        float tileHeight = texture.Height;
-        var yScale = wallHeight / tileHeight * (wall.YRepeat / 8f);
-        yScale *= -1;
+        var yTextureHeight = _texture.Height;
+        var yRatio = wallHeight / yTextureHeight;
+        var yRepeat = wall.YRepeat / 8f;
+        var yScale = yRatio * yRepeat;
+        var yModRation = wallHeight % yTextureHeight;
+        var yPanning = wall.YPanning / 256f;
 
-        float yOffset = 0;
+        var yOffset = 0f + yPanning;
 
         // Correct UVs to scale texture properly to wall size
-        var bottomLeftUv = new Vector2(0 + xOffset, yScale + yOffset);
+        var bottomLeftUv = new Vector2(xOffset, yScale + yOffset);
         var bottomRightUv = new Vector2(xScale + xOffset, yScale + yOffset);
-        var topRightUv = new Vector2(xScale + xOffset, 0 + yOffset);
-        var topLeftUv = new Vector2(0 + xOffset, 0 + yOffset);
+        var topRightUv = new Vector2(xScale + xOffset, yOffset);
+        var topLeftUv = new Vector2(0 + xOffset, yOffset);
 
-        //TEST
-        var right = wall.XRepeat / 8f;
-        right = 1;
-        var top = 1;
+        if (wall.Id == 1001)
+            Console.WriteLine("hi");
 
-        bottomLeftUv = new Vector2(0, 0);
-        bottomRightUv = new Vector2(right, 0);
-        topRightUv = new Vector2(right, top);
-        topLeftUv = new Vector2(0, top);
-
-        /*var vertices = new[]
-        {
-            new VertexPositionTexture(wallPoints[0], new Vector2(0, 1)), // Bottom Left
-            new VertexPositionTexture(wallPoints[1], new Vector2(1, 1)), // Bottom Right
-            new VertexPositionTexture(wallPoints[2], new Vector2(1, 0)), // Top Right
-            new VertexPositionTexture(wallPoints[3], new Vector2(0, 0)) // Top Left
-        };*/
+        return
+        [
+            new VertexPositionTexture(wallPoints[0], bottomLeftUv),
+            new VertexPositionTexture(wallPoints[1], bottomRightUv),
+            new VertexPositionTexture(wallPoints[2], topRightUv),
+            new VertexPositionTexture(wallPoints[3], topLeftUv)
+        ];
 
         // Handle CStat flipping
         var flipX = (wall.CStat & (1 << 3)) != 0;
@@ -200,63 +190,30 @@ public class WallTopMesh(GraphicsDevice device, RawSector sector, RawWall wall, 
             (bottomLeftUv.Y, topLeftUv.Y) = (topLeftUv.Y, bottomLeftUv.Y);
             (bottomRightUv.Y, topRightUv.Y) = (topRightUv.Y, bottomRightUv.Y);
         }
-
-        return new[]
-        {
-            new VertexPositionTexture(wallPoints[0], bottomLeftUv),
-            new VertexPositionTexture(wallPoints[1], bottomRightUv),
-            new VertexPositionTexture(wallPoints[2], topRightUv),
-            new VertexPositionTexture(wallPoints[3], topLeftUv)
-        };
     }
 
     public void Draw(Matrix viewMatrix, Matrix projectionMatrix)
     {
-        DrawWall(viewMatrix, projectionMatrix, _vertexBuffer, _indexBuffer);
-    }
-
-    private void DrawWall(
-        Matrix viewMatrix,
-        Matrix projectionMatrix,
-        VertexBuffer vertexBuffer,
-        IndexBuffer indexBuffer
-    )
-    {
-        if (vertexBuffer == null || indexBuffer == null)
+        if (_vertexBuffer == null || _indexBuffer == null || _effect == null || _texture == null)
             return;
 
         device.SamplerStates[0] = SamplerState.LinearWrap;
 
-        DrawWallPart(viewMatrix, projectionMatrix, vertexBuffer, indexBuffer, _effect, _texture);
-    }
+        _effect.View = viewMatrix;
+        _effect.Projection = projectionMatrix;
+        _effect.Texture = _texture;
 
-    private void DrawWallPart(
-        Matrix viewMatrix,
-        Matrix projectionMatrix,
-        VertexBuffer vertexBuffer,
-        IndexBuffer indexBuffer,
-        BasicEffect effect,
-        Texture2D texture
-    )
-    {
-        if (effect == null || texture == null)
-            return;
+        device.SetVertexBuffer(_vertexBuffer);
+        device.Indices = _indexBuffer;
 
-        effect.View = viewMatrix;
-        effect.Projection = projectionMatrix;
-        effect.Texture = texture;
-
-        device.SetVertexBuffer(vertexBuffer);
-        device.Indices = indexBuffer;
-
-        foreach (var pass in effect.CurrentTechnique.Passes)
+        foreach (var pass in _effect.CurrentTechnique.Passes)
         {
             pass.Apply();
             device.DrawIndexedPrimitives(
                 PrimitiveType.TriangleList,
                 0,
                 0,
-                indexBuffer.IndexCount / 3
+                _indexBuffer.IndexCount / 3
             );
         }
     }
