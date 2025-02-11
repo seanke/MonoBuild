@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Engine.Group;
 
 namespace Engine.Map;
 
@@ -56,13 +57,17 @@ public class MapFile
     internal int NumWalls { get; }
     internal int NumSprites { get; }
 
+    private GroupFile _groupFile;
+
     /// <summary>
     /// Loads a map from a given stream, reading its content and constructing the map file structure.
     /// </summary>
     /// <param name="stream">The stream to load the map from.</param>
     /// <returns>A new MapFile instance populated with the data from the stream.</returns>
-    public MapFile(Stream stream)
+    public MapFile(Stream stream, GroupFile groupFile)
     {
+        _groupFile = groupFile;
+
         using var reader = new BinaryReader(stream, Encoding.Default, leaveOpen: true);
 
         RawMapVersion = reader.ReadInt32();
@@ -91,6 +96,15 @@ public class MapFile
             .ToList();
     }
 
-    public MapFile(byte[] mapData)
-        : this(new MemoryStream(mapData)) { }
+    public MapFile(byte[] mapData, GroupFile groupFile)
+        : this(new MemoryStream(mapData), groupFile) { }
+
+    public MapFile(FileInfo mapFile, GroupFile groupFile)
+        : this(mapFile.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None), groupFile) { }
+
+    public MapFile(string mapFileNameFromGroupFile, GroupFile groupFile)
+        : this(
+            groupFile.Lumps.Find(x => x.RawFileName == mapFileNameFromGroupFile)!.RawData,
+            groupFile
+        ) { }
 }

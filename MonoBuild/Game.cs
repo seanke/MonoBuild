@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Engine.Group;
+using Engine.Map;
 using Microsoft.Xna.Framework.Input;
 using MonoBuild.Player;
 using MonoBuild.Pocs;
@@ -41,6 +42,7 @@ public class Game : Microsoft.Xna.Framework.Game
     protected override void LoadContent()
     {
         var groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
+        var map = new MapFile(new FileInfo("E1L1.MAP"), groupFile);
 
         _debug = new Debug(GraphicsDevice);
         _debug.LoadContent(groupFile.Tiles[0]);
