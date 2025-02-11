@@ -1,22 +1,22 @@
-namespace MonoBuild.Group;
+namespace Engine.Group;
 
 /// <summary>
-/// Represents a single lump (data block) within a GRP file.
+/// Represents a single lump (a file) within a GRP file.
 /// </summary>
-public class RawGroupLump
+internal class Lump(string rawFileName, int rawSize, byte[] rawData)
 {
     /// <summary>
     /// Gets or sets the offset (in bytes) of this lump within the GRP file.
     /// </summary>
-    public byte[] Data { get; set; }
+    internal byte[] RawData { get; } = rawData;
 
     /// <summary>
     /// Gets or sets the size (in bytes) of this lump.
     /// </summary>
-    public int Size { get; set; }
+    internal int RawSize { get; } = rawSize;
 
     /// <summary>
     /// Gets or sets the file name associated with this lump.
     /// </summary>
-    public string FileName { get; set; }
+    internal string RawFileName { get; } = rawFileName;
 }

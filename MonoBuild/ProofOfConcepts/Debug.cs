@@ -1,20 +1,19 @@
-using MonoBuild.Art;
+using System;
+using Engine.Art;
+using MonoBuild.Loaders;
+using Color = Microsoft.Xna.Framework.Color;
 
-namespace MonoBuild;
+namespace MonoBuild.Pocs;
 
-public class Debug(GraphicsDevice graphicsDevice)
+public class Debug(GraphicsDevice graphicsDevice) : IDisposable
 {
     private Texture2D _texture;
     private SpriteBatch _spriteBatch;
 
-    public void LoadContent()
+    public void LoadContent(Tile tile)
     {
         // Load the texture from tile 0
-        _texture = TextureHelper.CreateTextureFromTile(
-            graphicsDevice,
-            State.LoadedGroupArt.Tiles[0],
-            State.LoadedPaletteFile.Colors
-        );
+        _texture = TextureLoader.CreateTextureFromTile(graphicsDevice, tile);
 
         // Initialize SpriteBatch for drawing
         _spriteBatch = new SpriteBatch(graphicsDevice);

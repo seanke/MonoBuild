@@ -1,8 +1,8 @@
 using System.Numerics;
 
-namespace Engine.Map;
+namespace Engine;
 
-internal static class Helper
+internal static class Utilities
 {
     private const float BuildHeightUnitMeterRatio = -1 / 256f; // Scale factor from Duke3D to MonoGame
     private const float BuildWidthUnitMeterRatio = 1 / 16f; // Scale factor from Duke3D to MonoGame

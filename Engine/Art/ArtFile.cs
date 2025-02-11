@@ -1,50 +1,52 @@
-using System.IO;
 using System.Text;
 
-namespace MonoBuild.Art;
+namespace Engine.Art;
 
 /// <summary>
 /// Represents an ART file containing textures (tiles) used in the Build engine.
 /// </summary>
-public class RawArtFile
+internal class ArtFile
 {
     /// <summary>
     /// The version number of the ART file.
     /// </summary>
-    public int Version { get; set; }
+    internal int RawVersion { get; }
 
     /// <summary>
     /// The first tile index in this ART file.
     /// </summary>
-    public int FirstTile { get; set; }
+    internal int RawFirstTile { get; }
 
     /// <summary>
     /// The last tile index in this ART file.
     /// </summary>
-    public int LastTile { get; set; }
+    internal int RawLastTile { get; }
 
     /// <summary>
     /// A list of tile metadata entries, including width, height, and other properties.
     /// </summary>
-    public List<RawTile> Tiles { get; set; } = [];
+    internal List<Tile> RawTiles { get; } = [];
+
+    private Palette Palette { get; }
 
     /// <summary>
     /// Loads an ART file from a given stream.
     /// </summary>
     /// <param name="stream">The stream containing ART file data.</param>
+    /// <param name="palette"></param>
     /// <returns>A new RawArtFile instance populated with the data from the stream.</returns>
-    public static RawArtFile LoadFromStream(Stream stream)
+    internal ArtFile(Stream stream, Palette palette)
     {
-        var artFile = new RawArtFile();
+        Palette = palette;
 
         using var reader = new BinaryReader(stream, Encoding.Default, leaveOpen: true);
 
-        artFile.Version = reader.ReadInt32();
+        RawVersion = reader.ReadInt32();
         _ = reader.ReadInt32(); // Skip the number of tiles, Ken said it's not reliable
-        artFile.FirstTile = reader.ReadInt32();
-        artFile.LastTile = reader.ReadInt32();
+        RawFirstTile = reader.ReadInt32();
+        RawLastTile = reader.ReadInt32();
 
-        var tileCount = artFile.LastTile - artFile.FirstTile + 1;
+        var tileCount = RawLastTile - RawFirstTile + 1;
 
         // Read tile metadata
         var widths = new short[tileCount];
@@ -65,35 +67,24 @@ public class RawArtFile
         }
 
         // Read tile pixel data
-        artFile.Tiles = new List<RawTile>(tileCount);
+        RawTiles = new List<Tile>(tileCount);
         for (var i = 0; i < tileCount; i++)
         {
             var pixelDataSize = widths[i] * heights[i];
             var pixelData = reader.ReadBytes(pixelDataSize);
 
-            artFile.Tiles.Add(
-                new RawTile
-                {
-                    TileIndex = artFile.FirstTile + i,
-                    Width = widths[i],
-                    Height = heights[i],
-                    Picanm = picanm[i],
-                    PixelData = pixelData
-                }
+            RawTiles.Add(
+                new Tile(RawFirstTile + i, widths[i], heights[i], picanm[i], pixelData, palette)
             );
         }
-
-        return artFile;
     }
 
     /// <summary>
     /// Loads an ART file from a byte array.
     /// </summary>
     /// <param name="artData">The byte array containing ART file data.</param>
+    /// <param name="palette"></param>
     /// <returns>A new RawArtFile instance populated with the data.</returns>
-    public static RawArtFile LoadFromBytes(byte[] artData)
-    {
-        using var stream = new MemoryStream(artData);
-        return LoadFromStream(stream);
-    }
+    internal ArtFile(byte[] artData, Palette palette)
+        : this(new MemoryStream(artData), palette) { }
 }

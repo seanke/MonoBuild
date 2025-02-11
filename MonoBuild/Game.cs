@@ -1,14 +1,16 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using Engine.Group;
 using Microsoft.Xna.Framework.Input;
 using MonoBuild.Player;
-using MonoBuild.Render;
+using MonoBuild.Pocs;
+using MonoBuild.ProofOfConcepts;
 
 namespace MonoBuild;
 
 public class Game : Microsoft.Xna.Framework.Game
 {
-    private MapRenderer _mapRenderer;
     private Camera _camera;
     private DebugInformation _debugInformation;
     private Skybox _skybox;
@@ -28,7 +30,7 @@ public class Game : Microsoft.Xna.Framework.Game
 
     protected override void Initialize()
     {
-        _mapRenderer = new MapRenderer(GraphicsDevice);
+        //_mapRenderer = new MapRenderer(GraphicsDevice);
         _camera = new Camera(GraphicsDevice, new Vector3(0, 0, 10));
         _debugInformation = new DebugInformation(GraphicsDevice, _camera);
         _skybox = new Skybox(GraphicsDevice);
@@ -38,30 +40,15 @@ public class Game : Microsoft.Xna.Framework.Game
 
     protected override void LoadContent()
     {
-        State.LoadGroupFromFile(new FileInfo("DUKE3DATOMIC.GRP"));
-
-        var group = State.LoadedRawGroup;
-        if (group == null)
-            throw new Exception("Failed to load group file.");
-
-        var art = State.LoadedGroupArt;
-        if (art == null)
-            throw new Exception("Failed to load group art.");
-
-        var palette = State.LoadedPaletteFile;
-        if (palette == null)
-            throw new Exception("Failed to load palette file.");
+        var groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
 
         _debug = new Debug(GraphicsDevice);
-        _debug.LoadContent();
+        _debug.LoadContent(groupFile.Tiles[0]);
 
-        State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
+        //State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
         //State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);
 
-        if (State.LoadedRawMap == null)
-            throw new Exception("Failed to load map file.");
-
-        _mapRenderer.LoadContent();
+        //_mapRenderer.LoadContent();
         _debugInformation.LoadContent(Content);
     }
 
@@ -86,17 +73,17 @@ public class Game : Microsoft.Xna.Framework.Game
         //GraphicsDevice.RasterizerState = new RasterizerState { FillMode = FillMode.WireFrame };
 
         _skybox.Draw(_camera.View, _camera.Projection);
-        _mapRenderer.Draw(_camera.View, _camera.Projection);
+        //_mapRenderer.Draw(_camera.View, _camera.Projection);
         _debugInformation.Draw();
 
-        //_debug.Draw();
+        _debug.Draw();
 
         base.Draw(gameTime);
     }
 
     protected override void Dispose(bool disposing)
     {
-        _mapRenderer.Dispose();
+        //_mapRenderer.Dispose();
         base.Dispose(disposing);
     }
 }

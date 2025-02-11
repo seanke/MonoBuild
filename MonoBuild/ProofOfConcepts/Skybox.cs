@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace MonoBuild;
+namespace MonoBuild.ProofOfConcepts;
 
 public class Skybox
 {
