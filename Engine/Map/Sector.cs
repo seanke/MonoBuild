@@ -1,4 +1,7 @@
 ﻿using System.Collections.Immutable;
+using System.Numerics;
+using Engine.Art;
+using LibTessDotNet;
 
 namespace Engine.Map;
 
@@ -124,12 +127,16 @@ public class Sector
 
     internal int Id { get; }
 
-    public Mesh FloorMesh { get; private set; }
-    public Mesh CeilingMesh { get; private set; }
-    
-    public ImmutableList<Wall> Walls { get; internal set; }
+    public ImmutableList<Mesh> FloorMeshes { get; private set; }
+    public ImmutableList<Mesh> CeilingMeshes { get; private set; }
+    public ImmutableList<Wall> Walls { get; private set; }
+
+    internal float CeilingZ { get; }
+    internal float FloorZ { get; }
 
     private readonly MapFile _mapFile;
+    private readonly Tile _ceilingTexture;
+    private readonly Tile _floorTexture;
 
     /// <summary>
     /// Reads and constructs a sector from a binary reader stream, typically used for map loading.
@@ -165,33 +172,71 @@ public class Sector
         RawExtra = reader.ReadInt16();
 
         Id = indexInRawSectorsArray;
+        CeilingZ = RawCeilingZ * Utilities.BuildHeightUnitMeterRatio;
+        FloorZ = RawFloorZ * Utilities.BuildHeightUnitMeterRatio;
 
         _mapFile = mapFile;
     }
 
     /// <summary>
-    /// Populates the sector's Walls list. It MUST be called after all walls have been read from the map file.
+    /// Loads sector properties. It MUST be called after all walls have been read from the map file.
     /// </summary>
     /// <returns></returns>
-    private List<Wall> PopulateWallsList()
+    internal void Load()
     {
-        var result = new List<Wall>();
+        // Populate the walls list for this sector
+        Walls = _mapFile.Walls.Skip(RawWallPtr).Take(RawWallNum).ToImmutableList();
 
-        if (sector.RawWallPtr < 0 || sector.RawWallPtr >= _mapFile.Walls.Count)
-            return result;
+        // Get the wall loops for this sector, to be used for floor, ceiling and wall meshes
+        var sectorWallLoops = GetSectorWallLoops(this);
 
-        var walls = _mapFile.Walls.Skip(sector.RawWallPtr).Take(sector.RawWallNum);
+        var floorMeshes = new List<Mesh>();
+        var ceilingMeshes = new List<Mesh>();
+        foreach (var sectorWallLoop in sectorWallLoops)
+        {
+            var tessellatedSectorWallLoops = GetTessellatedSectorWallLoop(sectorWallLoop, 0);
 
-        return walls.ToList();
+            // Populate the floor mesh
+            floorMeshes.Add(GetFloorMesh(tessellatedSectorWallLoops));
+
+            // Populate the ceiling mesh
+            ceilingMeshes.Add(LoadCeilingMesh(tessellatedSectorWallLoops));
+        }
+        FloorMeshes = floorMeshes.ToImmutableList();
+        CeilingMeshes = ceilingMeshes.ToImmutableList();
+    }
+
+    private Mesh GetFloorMesh(Tess tessellatedSectorWallLoops)
+    {
+        var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vector3(
+            v.Position.X,
+            v.Position.Y,
+            FloorZ
+        ));
+
+        var indices = tessellatedSectorWallLoops.Elements;
+
+        return new Mesh(vertices, indices, _floorTexture);
+    }
+
+    private Mesh LoadCeilingMesh(Tess tessellatedSectorWallLoops)
+    {
+        var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vector3(
+            v.Position.X,
+            v.Position.Y,
+            CeilingZ
+        ));
+
+        var indices = tessellatedSectorWallLoops.Elements;
+
+        return new Mesh(vertices, indices, _floorTexture);
     }
 
     private List<List<Wall>> GetSectorWallLoops(Sector sector)
     {
         var result = new List<List<Wall>>();
 
-        var walls = GetSectorWalls(sector);
-
-        foreach (var wall in walls)
+        foreach (var wall in Walls)
         {
             if (result.Any(loop => loop.Contains(wall)))
                 continue;
@@ -209,5 +254,98 @@ public class Sector
         }
 
         return result;
+    }
+
+    private static Tess GetTessellatedSectorWallLoop(List<Wall> sectorWallLoop, int height)
+    {
+        // Create a list of unique points for the floor.
+        var floorPoints = sectorWallLoop
+            .Select(w =>
+                Utilities.ConvertBuildToRightHandedCoordinates(new Vector3(w.RawX, w.RawY, height))
+            )
+            //.Distinct() // Remove duplicates
+            .ToList();
+
+        // Ensure we have a valid polygon (at least 3 distinct points)
+        if (floorPoints.Count < 3)
+            return null;
+
+        // Close the contour if necessary
+        if (floorPoints[0] != floorPoints.Last())
+            floorPoints.Add(floorPoints[0]);
+
+        // Strip redundant points (collinear, degenerate, or very close)
+        StripLoop(floorPoints);
+
+        // Ensure we still have a valid polygon after cleaning
+        if (floorPoints.Count < 3)
+            return null;
+
+        // Convert to LibTessDotNet's ContourVertex format
+        var contour = floorPoints
+            .Select(p => new ContourVertex
+            {
+                Position = new Vec3
+                {
+                    X = p.X,
+                    Y = p.Y,
+                    Z = p.Z
+                }
+            })
+            .ToArray();
+
+        // Create and set up tessellator
+        var tess = new Tess();
+        tess.AddContour(contour, ContourOrientation.Original);
+
+        // Try a more robust winding rule (NonZero instead of EvenOdd)
+        tess.Tessellate(WindingRule.NonZero, ElementType.Polygons, 3);
+
+        return tess;
+    }
+
+    /// <summary>
+    /// Removes collinear and redundant points from the loop.
+    /// Inspired by Build Engine's `StripLoop` function.
+    /// </summary>
+    private static void StripLoop(List<Vector3> points)
+    {
+        const float tolerance = 1 / 2560f;
+
+        for (var p = 0; p < points.Count; p++)
+        {
+            var prev = (p == 0) ? points.Count - 1 : p - 1;
+            var next = (p == points.Count - 1) ? 0 : p + 1;
+
+            // If two neighboring points are equal, remove this one
+            if (points[next] == points[prev])
+            {
+                points.RemoveAt(p);
+                p = Math.Max(0, p - 1); // Backtrack to recheck
+                continue; // Skip to next iteration to avoid out-of-bounds errors
+            }
+
+            // Remove collinear points (same X or Y direction)
+            var isCollinear =
+                (
+                    Math.Abs(points[prev].X - points[p].X) < tolerance
+                    && Math.Abs(points[next].X - points[p].X) < tolerance
+                    && Math.Sign(points[next].Z - points[p].Z)
+                        == Math.Sign(points[prev].Z - points[p].Z)
+                )
+                || (
+                    Math.Abs(points[prev].Z - points[p].Z) < tolerance
+                    && Math.Abs(points[next].Z - points[p].Z) < tolerance
+                    && Math.Sign(points[next].X - points[p].X)
+                        == Math.Sign(points[prev].X - points[p].X)
+                )
+                || Vector3.Distance(points[prev], points[next]) < tolerance; // Very close points
+
+            if (isCollinear)
+            {
+                points.RemoveAt(p);
+                p = Math.Max(0, p - 1); // Backtrack to recheck
+            }
+        }
     }
 }

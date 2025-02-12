@@ -4,7 +4,7 @@ namespace Engine;
 
 internal static class Utilities
 {
-    private const float BuildHeightUnitMeterRatio = -1 / 256f; // Scale factor from Duke3D to MonoGame
+    internal const float BuildHeightUnitMeterRatio = -1 / 256f; // Scale factor from Duke3D to MonoGame
     private const float BuildWidthUnitMeterRatio = 1 / 16f; // Scale factor from Duke3D to MonoGame
 
     /// <summary>

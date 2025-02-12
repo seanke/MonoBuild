@@ -38,7 +38,7 @@ public class DebugInformation
 
         // Display camera rotation (yaw and pitch)
         var rotationText =
-            $"Rotation: Yaw={MathHelper.ToDegrees(_camera.Yaw):F2}, Pitch={MathHelper.ToDegrees(_camera.Pitch):F2}";
+            $"Rotation: Yaw={MathHelper.ToDegrees(_camera.Yaw) % 360:F2}, Pitch={MathHelper.ToDegrees(_camera.Pitch):F2}";
         _spriteBatch.DrawString(_font, rotationText, new Vector2(10, 30), Color.White);
 
         _spriteBatch.End();

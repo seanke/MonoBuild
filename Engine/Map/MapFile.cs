@@ -94,6 +94,12 @@ public class MapFile
             .Range(0, numSprites)
             .Select(id => new Sprite(reader, id, this))
             .ToList();
+
+        // Populate the Walls list in each sector
+        foreach (var sector in Sectors)
+        {
+            sector.Load();
+        }
     }
 
     public MapFile(byte[] mapData, GroupFile groupFile)
