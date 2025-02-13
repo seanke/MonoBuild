@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Immutable;
+using System.Text;
 using Engine.Group;
 
 namespace Engine.Map;
@@ -48,6 +49,8 @@ public class MapFile
     /// </summary>
     internal List<Wall> Walls { get; }
 
+    public ImmutableList<Mesh> Meshes { get; }
+
     /// <summary>
     /// A list of Sprite objects, representing items, enemies, or other interactable objects in the map.
     /// </summary>
@@ -81,7 +84,7 @@ public class MapFile
         NumSectors = numSectors;
         Sectors = Enumerable
             .Range(0, numSectors)
-            .Select(id => new Sector(reader, id, this))
+            .Select(id => new Sector(reader, id, this, groupFile))
             .ToList();
 
         var numWalls = reader.ReadUInt16();
@@ -95,11 +98,15 @@ public class MapFile
             .Select(id => new Sprite(reader, id, this))
             .ToList();
 
+        var meshes = new List<Mesh>();
         // Populate the Walls list in each sector
         foreach (var sector in Sectors)
         {
             sector.Load();
+            meshes.AddRange(sector.FloorMeshes);
+            meshes.AddRange(sector.CeilingMeshes);
         }
+        Meshes = meshes.ToImmutableList();
     }
 
     public MapFile(byte[] mapData, GroupFile groupFile)

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Numerics;
-using Engine.Art;
+using Engine.Group;
 using LibTessDotNet;
 
 namespace Engine.Map;
@@ -127,6 +127,7 @@ public class Sector
 
     internal int Id { get; }
 
+    //TODO I think it is possible to change this to one mesh for floor and one for ceiling
     public ImmutableList<Mesh> FloorMeshes { get; private set; }
     public ImmutableList<Mesh> CeilingMeshes { get; private set; }
     public ImmutableList<Wall> Walls { get; private set; }
@@ -135,8 +136,7 @@ public class Sector
     internal float FloorZ { get; }
 
     private readonly MapFile _mapFile;
-    private readonly Tile _ceilingTexture;
-    private readonly Tile _floorTexture;
+    private readonly GroupFile _groupFile;
 
     /// <summary>
     /// Reads and constructs a sector from a binary reader stream, typically used for map loading.
@@ -145,7 +145,12 @@ public class Sector
     /// <param name="indexInRawSectorsArray"></param>
     /// <param name="mapFile"></param>
     /// <returns>A new instance of a Sector populated with data from the binary reader.</returns>
-    public Sector(BinaryReader reader, int indexInRawSectorsArray, MapFile mapFile)
+    public Sector(
+        BinaryReader reader,
+        int indexInRawSectorsArray,
+        MapFile mapFile,
+        GroupFile groupFile
+    )
     {
         RawWallPtr = reader.ReadInt16();
         RawWallNum = reader.ReadInt16();
@@ -172,10 +177,11 @@ public class Sector
         RawExtra = reader.ReadInt16();
 
         Id = indexInRawSectorsArray;
-        CeilingZ = RawCeilingZ * Utilities.BuildHeightUnitMeterRatio;
-        FloorZ = RawFloorZ * Utilities.BuildHeightUnitMeterRatio;
+        CeilingZ = RawCeilingZ * Constants.BuildHeightUnitMeterRatio;
+        FloorZ = RawFloorZ * Constants.BuildHeightUnitMeterRatio;
 
         _mapFile = mapFile;
+        _groupFile = groupFile;
     }
 
     /// <summary>
@@ -208,28 +214,38 @@ public class Sector
 
     private Mesh GetFloorMesh(Tess tessellatedSectorWallLoops)
     {
-        var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vector3(
-            v.Position.X,
-            v.Position.Y,
-            FloorZ
+        var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
+            new Vector3(v.Position.X, FloorZ, v.Position.Z),
+            new Vector2(
+                v.Position.X / _groupFile.Tiles[RawFloorPicnum].Width,
+                v.Position.Z / _groupFile.Tiles[RawFloorPicnum].Height
+            )
         ));
 
         var indices = tessellatedSectorWallLoops.Elements;
 
-        return new Mesh(vertices, indices, _floorTexture);
+        return new Mesh(vertices, indices, _groupFile.Tiles[RawFloorPicnum], this, MeshType.Floor);
     }
 
     private Mesh LoadCeilingMesh(Tess tessellatedSectorWallLoops)
     {
-        var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vector3(
-            v.Position.X,
-            v.Position.Y,
-            CeilingZ
+        var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
+            new Vector3(v.Position.X, CeilingZ, v.Position.Z),
+            new Vector2(
+                v.Position.X / _groupFile.Tiles[RawFloorPicnum].Width,
+                v.Position.Z / _groupFile.Tiles[RawFloorPicnum].Height
+            )
         ));
 
         var indices = tessellatedSectorWallLoops.Elements;
 
-        return new Mesh(vertices, indices, _floorTexture);
+        return new Mesh(
+            vertices,
+            indices,
+            _groupFile.Tiles[RawCeilingPicnum],
+            this,
+            MeshType.Ceiling
+        );
     }
 
     private List<List<Wall>> GetSectorWallLoops(Sector sector)
@@ -260,9 +276,7 @@ public class Sector
     {
         // Create a list of unique points for the floor.
         var floorPoints = sectorWallLoop
-            .Select(w =>
-                Utilities.ConvertBuildToRightHandedCoordinates(new Vector3(w.RawX, w.RawY, height))
-            )
+            .Select(w => new Vector3(w.PositionStart.X, height, w.PositionStart.Y))
             //.Distinct() // Remove duplicates
             .ToList();
 

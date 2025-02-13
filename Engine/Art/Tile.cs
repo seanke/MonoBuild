@@ -57,6 +57,8 @@ public class Tile
     public short Width => RawWidth;
     public short Height => RawHeight;
 
+    public int Id => RawTileIndex;
+
     public Color[] PixelData
     {
         get
@@ -92,5 +94,10 @@ public class Tile
         RawPicanm = rawPicanm;
         RawPixelData = rawTileData;
         Palette = palette;
+    }
+
+    public override string ToString()
+    {
+        return $"Tile {Id} - {Width}x{Height}";
     }
 }

@@ -13,7 +13,7 @@ public class Debug(GraphicsDevice graphicsDevice) : IDisposable
     public void LoadContent(Tile tile)
     {
         // Load the texture from tile 0
-        _texture = TextureLoader.CreateTextureFromTile(graphicsDevice, tile);
+        _texture = TextureLoader.LoadTextureFromTile(graphicsDevice, tile);
 
         // Initialize SpriteBatch for drawing
         _spriteBatch = new SpriteBatch(graphicsDevice);

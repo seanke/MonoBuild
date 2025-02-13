@@ -14,12 +14,12 @@ public class Wall
     /// <summary>
     /// The X coordinate of the wall's starting point.
     /// </summary>
-    internal int RawX { get; }
+    private int RawX { get; }
 
     /// <summary>
     /// The Y coordinate of the wall's starting point.
     /// </summary>
-    internal int RawY { get; }
+    private int RawY { get; }
 
     /// <summary>
     /// Index of the next wall in the sector, forming a linked list of walls.
@@ -29,73 +29,73 @@ public class Wall
     /// <summary>
     /// Index of the wall on the opposite side of this wall, used for connecting sectors.
     /// </summary>
-    internal short RawNextWall { get; }
+    private short RawNextWall { get; }
 
     /// <summary>
     /// Index of the sector on the opposite side of this wall, helping in defining sector neighbors.
     /// </summary>
-    internal short RawNextSector { get; }
+    private short RawNextSector { get; }
 
     /// <summary>
     /// A bitfield containing flags related to the wall's rendering and behavior.
     /// </summary>
-    internal short RawCStat { get; }
+    private short RawCStat { get; }
 
     /// <summary>
     /// The texture index for the wall, referencing an entry in an ART file.
     /// </summary>
-    internal short RawPicnum { get; }
+    private short RawPicnum { get; }
 
     /// <summary>
     /// The texture index for the over (masking) texture, used for features like doors and windows.
     /// </summary>
-    internal short RawOverPicnum { get; }
+    private short RawOverPicnum { get; }
 
     /// <summary>
     /// The shade offset for the wall, affecting its brightness.
     /// </summary>
-    internal sbyte RawShade { get; }
+    private sbyte RawShade { get; }
 
     /// <summary>
     /// The palette number for the wall texture, which can change the color palette used.
     /// </summary>
-    internal byte RawPal { get; }
+    private byte RawPal { get; }
 
     /// <summary>
     /// Horizontal and vertical repeat factors for the wall texture, affecting its size.
     /// </summary>
-    internal byte RawXRepeat { get; }
+    private byte RawXRepeat { get; }
 
     /// <summary>
     /// Horizontal and vertical repeat factors for the wall texture, affecting its size.
     /// </summary>
-    internal byte RawYRepeat { get; }
+    private byte RawYRepeat { get; }
 
     /// <summary>
     /// Horizontal and vertical panning offsets for the wall texture, used for alignment.
     /// </summary>
-    internal byte RawXPanning { get; }
+    private byte RawXPanning { get; }
 
     /// <summary>
     /// Vertical panning offset for the wall texture, used for alignment.
     /// </summary>
-    internal byte RawYPanning { get; }
+    private byte RawYPanning { get; }
 
     /// <summary>
     /// Game-specific tags for triggering events or actions when interacting with the wall.
     /// </summary>
-    internal short RawLotag { get; }
+    private short RawLotag { get; }
 
     /// <summary>
     /// Additional game-specific tag, similar to Lotag but for different or additional purposes.
     /// </summary>
-    internal short RawHitag { get; }
+    private short RawHitag { get; }
 
     /// <summary>
     /// An extra value for game-specific use, can hold any additional information needed by the game engine.
     /// </summary>
-    internal short RawExtra { get; }
-    
+    private short RawExtra { get; }
+
     public Mesh TopPartMesh { get; private set; }
     public Mesh BottomPartMesh { get; private set; }
     public Mesh FullPartMesh { get; private set; }
@@ -122,7 +122,10 @@ public class Wall
         RawHitag = reader.ReadInt16();
         RawExtra = reader.ReadInt16();
 
-        PositionStart = new Vector2(RawX, RawY);
+        PositionStart = new Vector2(
+            RawX * Constants.BuildWidthUnitMeterRatio,
+            RawY * Constants.BuildWidthUnitMeterRatio
+        );
 
         Id = indexInRawWallsArray;
 

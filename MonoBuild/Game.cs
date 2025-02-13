@@ -15,6 +15,8 @@ public class Game : Microsoft.Xna.Framework.Game
     private DebugInformation _debugInformation;
     private Skybox _skybox;
 
+    private MapMesh _mapMesh;
+
     private Debug _debug;
 
     public Game()
@@ -34,6 +36,7 @@ public class Game : Microsoft.Xna.Framework.Game
         _camera = new Camera(GraphicsDevice, new Vector3(0, 0, 10));
         _debugInformation = new DebugInformation(GraphicsDevice, _camera);
         _skybox = new Skybox(GraphicsDevice);
+        _mapMesh = new MapMesh(GraphicsDevice);
 
         base.Initialize();
     }
@@ -42,14 +45,11 @@ public class Game : Microsoft.Xna.Framework.Game
     {
         var groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
         var map = new MapFile(new FileInfo("E1L1.MAP"), groupFile);
+        _mapMesh.LoadContent(map);
 
         _debug = new Debug(GraphicsDevice);
-        _debug.LoadContent(groupFile.Tiles[0]);
+        _debug.LoadContent(groupFile.Tiles[1]);
 
-        //State.LoadMapFromFile(new FileInfo("E1L1.MAP"));
-        //State.LoadMapFromBytes(group.Lumps.Find(x => x.FileName == "E1L1.MAP").Data);
-
-        //_mapRenderer.LoadContent();
         _debugInformation.LoadContent(Content);
     }
 
@@ -74,9 +74,8 @@ public class Game : Microsoft.Xna.Framework.Game
         //GraphicsDevice.RasterizerState = new RasterizerState { FillMode = FillMode.WireFrame };
 
         _skybox.Draw(_camera.View, _camera.Projection);
-        //_mapRenderer.Draw(_camera.View, _camera.Projection);
+        _mapMesh.Draw(_camera.View, _camera.Projection);
         _debugInformation.Draw();
-
         _debug.Draw();
 
         base.Draw(gameTime);

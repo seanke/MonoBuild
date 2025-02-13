@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoBuild", "MonoBuild\Mono
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine", "Engine\Engine.csproj", "{9CACF40F-F4CE-4552-B348-C03D76F9B731}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{4421DB29-20A5-419E-B05F-BCE4A55403B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{9CACF40F-F4CE-4552-B348-C03D76F9B731}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CACF40F-F4CE-4552-B348-C03D76F9B731}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CACF40F-F4CE-4552-B348-C03D76F9B731}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4421DB29-20A5-419E-B05F-BCE4A55403B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4421DB29-20A5-419E-B05F-BCE4A55403B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4421DB29-20A5-419E-B05F-BCE4A55403B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4421DB29-20A5-419E-B05F-BCE4A55403B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

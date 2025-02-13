@@ -4,16 +4,28 @@ using Engine.Art;
 
 namespace Engine.Map;
 
-public class Mesh
+public enum MeshType
 {
-    public ImmutableList<Vector3> Vertices { get; }
-    public ImmutableList<int> Indices { get; }
-    public Tile Texture { get; }
+    Floor,
+    Ceiling,
+    UpperWall,
+    LowerWall,
+    SolidWall
+}
 
-    public Mesh(IEnumerable<Vector3> vertices, IEnumerable<int> indices, Tile texture)
-    {
-        Vertices = vertices.ToImmutableList();
-        Indices = indices.ToImmutableList();
-        Texture = texture;
-    }
+public class Mesh(
+    IEnumerable<Vertex> vertices,
+    IEnumerable<int> indices,
+    Tile texture,
+    Sector sector,
+    MeshType type
+)
+{
+    public ImmutableList<Vertex> Vertices { get; } = vertices.ToImmutableList();
+    public ImmutableList<int> Indices { get; } = indices.ToImmutableList();
+    public Tile Texture { get; } = texture;
+
+    public int SectorId => sector.Id;
+
+    public MeshType Type { get; } = type;
 }
