@@ -98,6 +98,7 @@ public class Wall
     /// </summary>
     private short RawExtra { get; }
 
+    private bool YIsFlipped => (RawCStat & 9) != 0;
     private bool IsPortal => RawNextSector > -1;
 
     private Mesh? UpperWallMesh { get; set; }
@@ -162,7 +163,7 @@ public class Wall
         var top = _sector.CeilingYCoordinate;
         var bottom = NextSector.CeilingYCoordinate;
 
-        if (NextSector.FloorYCoordinate >= NextSector.FloorYCoordinate)
+        if (bottom >= top)
             return null;
 
         var wallPoints = new List<Vector3>
@@ -177,7 +178,7 @@ public class Wall
         var vertices = wallPoints
             .Select(position => new Vertex(
                 position,
-                new Vector2(position.X / Tile.Width, position.Z / Tile.Height)
+                new Vector2(position.X / Tile.Width, position.Y / Tile.Height)
             ))
             .ToImmutableList();
 
@@ -185,7 +186,7 @@ public class Wall
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
 
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, _sector.FloorTile, _sector, MeshType.LowerWall);
+        var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.UpperWall);
         return mesh;
     }
 
@@ -194,13 +195,13 @@ public class Wall
         if (!IsPortal)
             return null;
 
-        var top = NextSector.FloorYCoordinate;
         var bottom = _sector.FloorYCoordinate;
+        var top = NextSector.FloorYCoordinate;
 
-        if (_sector.FloorYCoordinate >= NextSector.FloorYCoordinate)
-            return null; //top = NextSector.FloorYCoordinate;
+        if (bottom >= top)
+            return null;
 
-        var wallPoints = new List<Vector3>
+        var points = new List<Vector3>
         {
             new(PositionStart.X, bottom, PositionStart.Y),
             new(NextWall.PositionStart.X, bottom, NextWall.PositionStart.Y),
@@ -208,11 +209,22 @@ public class Wall
             new(PositionStart.X, top, PositionStart.Y)
         };
 
-        // Map point of the texture
-        var vertices = wallPoints
+        var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+        var minX = points.Min(p => p.X);
+        var minY = points.Min(p => p.Y);
+        var maxX = points.Max(p => p.X);
+        var maxY = points.Max(p => p.Y);
+
+        var width = maxX - minX;
+        var height = maxY - minY;
+
+        var vertices = points
             .Select(position => new Vertex(
                 position,
-                new Vector2(position.X / Tile.Width, position.Z / Tile.Height)
+                new Vector2(
+                    (position.X - minX) / width, // Normalize X
+                    (position.Y - minY) / height // Normalize Y
+                )
             ))
             .ToImmutableList();
 
@@ -220,7 +232,7 @@ public class Wall
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
 
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, _sector.FloorTile, _sector, MeshType.LowerWall);
+        var mesh = new Mesh(vertices, indices, tile, _sector, MeshType.LowerWall);
         return mesh;
     }
 
@@ -244,7 +256,7 @@ public class Wall
         var vertices = wallPoints
             .Select(position => new Vertex(
                 position,
-                new Vector2(position.X / Tile.Width, position.Z / Tile.Height)
+                new Vector2(position.X / Tile.Width, position.Y / Tile.Height)
             ))
             .ToImmutableList();
 
@@ -252,7 +264,7 @@ public class Wall
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
 
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, _sector.FloorTile, _sector, MeshType.LowerWall);
+        var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.LowerWall);
         return mesh;
     }
 }

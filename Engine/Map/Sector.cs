@@ -137,8 +137,8 @@ public class Sector
     internal float CeilingYCoordinate { get; }
     internal float FloorYCoordinate { get; }
 
-    internal Tile FloorTile => _groupFile.Tiles[RawFloorPicnum];
-    internal Tile CeilingTile => _groupFile.Tiles[RawCeilingPicnum];
+    private Tile FloorTile => _groupFile.Tiles[RawFloorPicnum];
+    private Tile CeilingTile => _groupFile.Tiles[RawCeilingPicnum];
 
     private readonly MapFile _mapFile;
     private readonly GroupFile _groupFile;
@@ -157,6 +157,9 @@ public class Sector
         GroupFile groupFile
     )
     {
+        // Read sector properties from the binary reader
+        // Ken Silverman's Build engine uses a custom binary format for its map files
+        // Here we pared in the raw sector data to populate the sector object
         RawWallPtr = reader.ReadInt16();
         RawWallNum = reader.ReadInt16();
         RawCeilingZ = reader.ReadInt32();
