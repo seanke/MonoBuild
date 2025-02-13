@@ -13,127 +13,128 @@ public class Sector
     /// <summary>
     /// Index to the first wall in the sector, used to identify where the sector's wall definitions start.
     /// </summary>
-    internal short RawWallPtr { get; }
+    private short RawWallPtr { get; }
 
     /// <summary>
     /// The number of walls in this sector, determining how many walls are associated with this sector.
     /// </summary>
-    internal short RawWallNum { get; }
+    private short RawWallNum { get; }
 
     /// <summary>
     /// Z-coordinate (height) of the sector's ceiling at its first point.
     /// </summary>
-    internal int RawCeilingZ { get; }
+    private int RawCeilingZ { get; }
 
     /// <summary>
     /// Z-coordinate (height) of the sector's floor at its first point.
     /// </summary>
-    internal int RawFloorZ { get; }
+    private int RawFloorZ { get; }
 
     /// <summary>
     /// Bitfield containing various flags related to the sector's ceiling, such as parallaxing and slope.
     /// </summary>
-    internal short RawCeilingStat { get; }
+    private short RawCeilingStat { get; }
 
     /// <summary>
     /// Bitfield containing various flags related to the sector's floor, such as parallaxing and slope.
     /// </summary>
-    internal short RawFloorStat { get; }
+    private short RawFloorStat { get; }
 
     /// <summary>
     /// Texture index for the ceiling, referencing an entry in an ART file.
     /// </summary>
-    internal short RawCeilingPicnum { get; }
+    private short RawCeilingPicnum { get; }
 
     /// <summary>
     /// Shade offset for the ceiling, affecting its brightness.
     /// </summary>
-    internal sbyte RawCeilingShade { get; }
+    private sbyte RawCeilingShade { get; }
 
     /// <summary>
     /// Slope of the ceiling, determining how steep the slope is if the ceiling is sloped.
     /// </summary>
-    internal short RawCeilingHeinum { get; }
+    private short RawCeilingHeinum { get; }
 
     /// <summary>
     /// Palette number for the ceiling texture, which can change the color palette used.
     /// </summary>
-    internal byte RawCeilingPal { get; }
+    private byte RawCeilingPal { get; }
 
     /// <summary>
     /// Horizontal panning offset for the ceiling texture, useful for texture alignment.
     /// </summary>
-    internal byte RawCeilingXpanning { get; }
+    private byte RawCeilingXpanning { get; }
 
     /// <summary>
     /// Vertical panning offset for the ceiling texture, useful for texture alignment.
     /// </summary>
-    internal byte RawCeilingYpanning { get; }
+    private byte RawCeilingYpanning { get; }
 
     /// <summary>
     /// Texture index for the floor, referencing an entry in an ART file.
     /// </summary>
-    internal short RawFloorPicnum { get; }
+    private short RawFloorPicnum { get; }
 
     /// <summary>
     /// Slope of the floor, determining how steep the slope is if the floor is sloped.
     /// </summary>
-    internal short RawFloorHeinum { get; }
+    private short RawFloorHeinum { get; }
 
     /// <summary>
     /// Shade offset for the floor, affecting its brightness.
     /// </summary>
-    internal sbyte RawFloorShade { get; }
+    private sbyte RawFloorShade { get; }
 
     /// <summary>
     /// Palette number for the floor texture, which can change the color palette used.
     /// </summary>
-    internal byte RawFloorPal { get; }
+    private byte RawFloorPal { get; }
 
     /// <summary>
     /// Horizontal panning offset for the floor texture, useful for texture alignment.
     /// </summary>
-    internal byte RawFloorXpanning { get; }
+    private byte RawFloorXpanning { get; }
 
     /// <summary>
     /// Vertical panning offset for the floor texture, useful for texture alignment.
     /// </summary>
-    internal byte RawFloorYpanning { get; }
+    private byte RawFloorYpanning { get; }
 
     /// <summary>
     /// Affects how quickly sectors fade to darkness with distance. Lower values result in quicker darkening.
     /// </summary>
-    internal byte RawVisibility { get; }
+    private byte RawVisibility { get; }
 
     /// <summary>
     /// Padding byte, not used for any game logic but necessary for structure alignment.
     /// </summary>
-    internal byte RawFiller { get; }
+    private byte RawFiller { get; }
 
     /// <summary>
     /// Game-specific use, often for triggering events or actions within the sector.
     /// </summary>
-    internal short RawLotag { get; }
+    private short RawLotag { get; }
 
     /// <summary>
     /// Additional tag for game-specific use, similar to Lotag but for different or additional purposes.
     /// </summary>
-    internal short RawHitag { get; }
+    private short RawHitag { get; }
 
     /// <summary>
     /// An extra value for game-specific use, can hold any additional information needed by the game engine.
     /// </summary>
-    internal short RawExtra { get; }
+    private short RawExtra { get; }
 
     internal int Id { get; }
 
-    //TODO I think it is possible to change this to one mesh for floor and one for ceiling
-    public Mesh FloorMesh { get; private set; }
-    public Mesh CeilingMesh { get; private set; }
-    public ImmutableList<Wall> Walls { get; private set; }
+    public List<Mesh> Meshes { get; private set; }
 
-    internal float CeilingZ { get; }
-    internal float FloorZ { get; }
+    private Mesh FloorMesh { get; set; }
+    private Mesh CeilingMesh { get; set; }
+    private ImmutableList<Wall> Walls { get; set; }
+
+    internal float CeilingYCoordinate { get; }
+    internal float FloorYCoordinate { get; }
 
     private readonly MapFile _mapFile;
     private readonly GroupFile _groupFile;
@@ -177,8 +178,8 @@ public class Sector
         RawExtra = reader.ReadInt16();
 
         Id = indexInRawSectorsArray;
-        CeilingZ = RawCeilingZ * Constants.BuildHeightUnitMeterRatio;
-        FloorZ = RawFloorZ * Constants.BuildHeightUnitMeterRatio;
+        CeilingYCoordinate = RawCeilingZ * Constants.BuildHeightUnitMeterRatio;
+        FloorYCoordinate = RawFloorZ * Constants.BuildHeightUnitMeterRatio;
 
         _mapFile = mapFile;
         _groupFile = groupFile;
@@ -202,14 +203,18 @@ public class Sector
         FloorMesh = CreateFloorMesh(tessellatedSector);
         CeilingMesh = CreateCeilingMesh(tessellatedSector);
 
-        Walls.ForEach(x => x.Load(this));
-        //TODO Add wall meshes
+        var wallMeshes = new List<Mesh>();
+        Walls.ForEach(wall => wall.Load(this));
+
+        Meshes = new List<Mesh> { FloorMesh, CeilingMesh }
+            .Concat(wallMeshes)
+            .ToList();
     }
 
     private Mesh CreateFloorMesh(Tess tessellatedSectorWallLoops)
     {
         var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
-            new Vector3(v.Position.X, FloorZ, v.Position.Z),
+            new Vector3(v.Position.X, FloorYCoordinate, v.Position.Z),
             new Vector2(
                 v.Position.X / _groupFile.Tiles[RawFloorPicnum].Width,
                 v.Position.Z / _groupFile.Tiles[RawFloorPicnum].Height
@@ -224,7 +229,7 @@ public class Sector
     private Mesh CreateCeilingMesh(Tess tessellatedSectorWallLoops)
     {
         var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
-            new Vector3(v.Position.X, CeilingZ, v.Position.Z),
+            new Vector3(v.Position.X, CeilingYCoordinate, v.Position.Z),
             new Vector2(
                 v.Position.X / _groupFile.Tiles[RawFloorPicnum].Width,
                 v.Position.Z / _groupFile.Tiles[RawFloorPicnum].Height

@@ -98,9 +98,11 @@ public class Wall
 
     private bool IsPortal => RawNextSector > -1;
 
-    public Mesh? UpperWallMesh { get; private set; }
-    public Mesh? LowerWallMesh { get; private set; }
-    public Mesh? SolidWallMesh { get; private set; }
+    private Mesh? UpperWallMesh { get; set; }
+    private Mesh? LowerWallMesh { get; set; }
+    private Mesh? SolidWallMesh { get; set; }
+
+    public List<Mesh> Meshes { get; private set; }
 
     private readonly MapFile _map;
     private Sector _sector;
@@ -141,6 +143,9 @@ public class Wall
         UpperWallMesh = CreateUpperWallMesh();
         LowerWallMesh = CreateLowerWallMesh();
         SolidWallMesh = CreateSolidWallMesh();
+        Meshes = new List<Mesh> { UpperWallMesh, LowerWallMesh, SolidWallMesh }
+            .Where(wall => wall != null)
+            .ToList();
     }
 
     private Mesh? CreateUpperWallMesh()
