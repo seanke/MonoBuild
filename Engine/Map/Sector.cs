@@ -128,8 +128,8 @@ public class Sector
     internal int Id { get; }
 
     //TODO I think it is possible to change this to one mesh for floor and one for ceiling
-    public ImmutableList<Mesh> FloorMeshes { get; private set; }
-    public ImmutableList<Mesh> CeilingMeshes { get; private set; }
+    public Mesh FloorMesh { get; private set; }
+    public Mesh CeilingMesh { get; private set; }
     public ImmutableList<Wall> Walls { get; private set; }
 
     internal float CeilingZ { get; }
@@ -196,23 +196,17 @@ public class Sector
         // Get the wall loops for this sector, to be used for floor, ceiling and wall meshes
         var sectorWallLoops = GetSectorWallLoops(this);
 
-        var floorMeshes = new List<Mesh>();
-        var ceilingMeshes = new List<Mesh>();
-        foreach (var sectorWallLoop in sectorWallLoops)
-        {
-            var tessellatedSectorWallLoops = GetTessellatedSectorWallLoop(sectorWallLoop, 0);
+        // Tessellate the sector wall loops to create the floor and ceiling meshes
+        var tessellatedSector = GetTessellatedSector(sectorWallLoops, 0);
 
-            // Populate the floor mesh
-            floorMeshes.Add(GetFloorMesh(tessellatedSectorWallLoops));
+        FloorMesh = CreateFloorMesh(tessellatedSector);
+        CeilingMesh = CreateCeilingMesh(tessellatedSector);
 
-            // Populate the ceiling mesh
-            ceilingMeshes.Add(LoadCeilingMesh(tessellatedSectorWallLoops));
-        }
-        FloorMeshes = floorMeshes.ToImmutableList();
-        CeilingMeshes = ceilingMeshes.ToImmutableList();
+        Walls.ForEach(x => x.Load(this));
+        //TODO Add wall meshes
     }
 
-    private Mesh GetFloorMesh(Tess tessellatedSectorWallLoops)
+    private Mesh CreateFloorMesh(Tess tessellatedSectorWallLoops)
     {
         var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
             new Vector3(v.Position.X, FloorZ, v.Position.Z),
@@ -227,7 +221,7 @@ public class Sector
         return new Mesh(vertices, indices, _groupFile.Tiles[RawFloorPicnum], this, MeshType.Floor);
     }
 
-    private Mesh LoadCeilingMesh(Tess tessellatedSectorWallLoops)
+    private Mesh CreateCeilingMesh(Tess tessellatedSectorWallLoops)
     {
         var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
             new Vector3(v.Position.X, CeilingZ, v.Position.Z),
@@ -272,45 +266,39 @@ public class Sector
         return result;
     }
 
-    private static Tess GetTessellatedSectorWallLoop(List<Wall> sectorWallLoop, int height)
+    private static Tess GetTessellatedSector(List<List<Wall>> sectorWallLoops, int height)
     {
-        // Create a list of unique points for the floor.
-        var floorPoints = sectorWallLoop
-            .Select(w => new Vector3(w.PositionStart.X, height, w.PositionStart.Y))
-            //.Distinct() // Remove duplicates
-            .ToList();
-
-        // Ensure we have a valid polygon (at least 3 distinct points)
-        if (floorPoints.Count < 3)
-            return null;
-
-        // Close the contour if necessary
-        if (floorPoints[0] != floorPoints.Last())
-            floorPoints.Add(floorPoints[0]);
-
-        // Strip redundant points (collinear, degenerate, or very close)
-        StripLoop(floorPoints);
-
-        // Ensure we still have a valid polygon after cleaning
-        if (floorPoints.Count < 3)
-            return null;
-
-        // Convert to LibTessDotNet's ContourVertex format
-        var contour = floorPoints
-            .Select(p => new ContourVertex
-            {
-                Position = new Vec3
-                {
-                    X = p.X,
-                    Y = p.Y,
-                    Z = p.Z
-                }
-            })
-            .ToArray();
-
-        // Create and set up tessellator
         var tess = new Tess();
-        tess.AddContour(contour, ContourOrientation.Original);
+
+        foreach (var sectorWallLoop in sectorWallLoops)
+        {
+            // Create a list of unique points for the floor.
+            var floorPoints = sectorWallLoop
+                .Select(w => new Vector3(w.PositionStart.X, height, w.PositionStart.Y))
+                .ToList();
+
+            // Ensure we have a valid polygon (at least 3 distinct points)
+            if (floorPoints.Count < 3)
+                continue;
+
+            // Close the contour if necessary
+            if (floorPoints[0] != floorPoints.Last())
+                floorPoints.Add(floorPoints[0]);
+
+            // Strip redundant points (collinear, degenerate, or very close)
+            StripLoop(floorPoints);
+
+            // Ensure we still have a valid polygon after cleaning
+            if (floorPoints.Count < 3)
+                continue;
+
+            // Convert to LibTessDotNet's ContourVertex format
+            var contour = floorPoints
+                .Select(p => new ContourVertex { Position = new Vec3(p.X, p.Y, p.Z) })
+                .ToArray();
+
+            tess.AddContour(contour, ContourOrientation.Original);
+        }
 
         // Try a more robust winding rule (NonZero instead of EvenOdd)
         tess.Tessellate(WindingRule.NonZero, ElementType.Polygons, 3);

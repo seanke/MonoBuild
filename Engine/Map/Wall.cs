@@ -96,11 +96,14 @@ public class Wall
     /// </summary>
     private short RawExtra { get; }
 
-    public Mesh TopPartMesh { get; private set; }
-    public Mesh BottomPartMesh { get; private set; }
-    public Mesh FullPartMesh { get; private set; }
+    private bool IsPortal => RawNextSector > -1;
+
+    public Mesh? UpperWallMesh { get; private set; }
+    public Mesh? LowerWallMesh { get; private set; }
+    public Mesh? SolidWallMesh { get; private set; }
 
     private readonly MapFile _map;
+    private Sector _sector;
 
     public Wall(BinaryReader reader, int indexInRawWallsArray, MapFile map)
     {
@@ -130,5 +133,28 @@ public class Wall
         Id = indexInRawWallsArray;
 
         _map = map;
+    }
+
+    internal void Load(Sector sector)
+    {
+        _sector = sector;
+        UpperWallMesh = CreateUpperWallMesh();
+        LowerWallMesh = CreateLowerWallMesh();
+        SolidWallMesh = CreateSolidWallMesh();
+    }
+
+    private Mesh? CreateUpperWallMesh()
+    {
+        return null;
+    }
+
+    private Mesh? CreateLowerWallMesh()
+    {
+        return null;
+    }
+
+    private Mesh? CreateSolidWallMesh()
+    {
+        return null;
     }
 }

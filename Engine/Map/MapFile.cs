@@ -103,8 +103,8 @@ public class MapFile
         foreach (var sector in Sectors)
         {
             sector.Load();
-            meshes.AddRange(sector.FloorMeshes);
-            meshes.AddRange(sector.CeilingMeshes);
+            meshes.Add(sector.FloorMesh);
+            meshes.Add(sector.CeilingMesh);
         }
         Meshes = meshes.ToImmutableList();
     }
