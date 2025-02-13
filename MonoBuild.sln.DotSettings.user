@@ -11,6 +11,6 @@
 	<s:String x:Key="/Default/CodeInspection/PencilsConfiguration/ActualSeverity/@EntryValue">ERROR</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=847cbec4_002D2bf3_002D4844_002D9498_002De2140bfd858b/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Test1" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;TestAncestor&gt;
-    &lt;TestId&gt;xUnit::4421DB29-20A5-419E-B05F-BCE4A55403B5::net8.0::Tests.SectorMeshTests.RedSectorWithInnerRedSector_CutsAWholeInTheSector&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::4421DB29-20A5-419E-B05F-BCE4A55403B5::net8.0::Tests.SectorMeshTests&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

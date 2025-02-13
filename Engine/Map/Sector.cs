@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Numerics;
+using Engine.Art;
 using Engine.Group;
 using LibTessDotNet;
 
@@ -127,7 +128,7 @@ public class Sector
 
     internal int Id { get; }
 
-    public List<Mesh> Meshes { get; private set; }
+    public ImmutableList<Mesh> Meshes { get; private set; }
 
     private Mesh FloorMesh { get; set; }
     private Mesh CeilingMesh { get; set; }
@@ -135,6 +136,9 @@ public class Sector
 
     internal float CeilingYCoordinate { get; }
     internal float FloorYCoordinate { get; }
+
+    internal Tile FloorTile => _groupFile.Tiles[RawFloorPicnum];
+    internal Tile CeilingTile => _groupFile.Tiles[RawCeilingPicnum];
 
     private readonly MapFile _mapFile;
     private readonly GroupFile _groupFile;
@@ -200,15 +204,14 @@ public class Sector
         // Tessellate the sector wall loops to create the floor and ceiling meshes
         var tessellatedSector = GetTessellatedSector(sectorWallLoops, 0);
 
+        // Create the floor and ceiling meshes
         FloorMesh = CreateFloorMesh(tessellatedSector);
         CeilingMesh = CreateCeilingMesh(tessellatedSector);
 
-        var wallMeshes = new List<Mesh>();
         Walls.ForEach(wall => wall.Load(this));
-
-        Meshes = new List<Mesh> { FloorMesh, CeilingMesh }
-            .Concat(wallMeshes)
-            .ToList();
+        var meshes = new List<Mesh> { FloorMesh, CeilingMesh };
+        meshes.AddRange(Walls.SelectMany(wall => wall.Meshes));
+        Meshes = meshes.ToImmutableList();
     }
 
     private Mesh CreateFloorMesh(Tess tessellatedSectorWallLoops)

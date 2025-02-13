@@ -6,6 +6,21 @@ namespace Tests;
 public class SectorMeshTests
 {
     [Fact]
+    public void SomeWallMeshesExist()
+    {
+        var group = new GroupFile(new FileInfo("DUKE3D.GRP"));
+        var map = new MapFile(new FileInfo("E1L1.MAP"), group);
+
+        var wallMeshes = map.Meshes.Where(mesh =>
+            mesh.Type == MeshType.UpperWall
+            || mesh.Type == MeshType.LowerWall
+            || mesh.Type == MeshType.SolidWall
+        );
+
+        Assert.NotEmpty(wallMeshes);
+    }
+
+    [Fact]
     public void RedSectorWithInnerRedSector_CutsAWholeInTheSector()
     {
         var group = new GroupFile(new FileInfo("DUKE3D.GRP"));

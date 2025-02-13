@@ -60,7 +60,7 @@ public class MapFile
     internal int NumWalls { get; }
     internal int NumSprites { get; }
 
-    private GroupFile _groupFile;
+    internal GroupFile GroupFile { get; }
 
     /// <summary>
     /// Loads a map from a given stream, reading its content and constructing the map file structure.
@@ -69,7 +69,7 @@ public class MapFile
     /// <returns>A new MapFile instance populated with the data from the stream.</returns>
     public MapFile(Stream stream, GroupFile groupFile)
     {
-        _groupFile = groupFile;
+        GroupFile = groupFile;
 
         using var reader = new BinaryReader(stream, Encoding.Default, leaveOpen: true);
 

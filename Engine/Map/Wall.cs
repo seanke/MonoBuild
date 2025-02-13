@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿using System.Collections.Immutable;
+using System.Numerics;
+using Engine.Art;
 
 namespace Engine.Map;
 
@@ -102,7 +104,12 @@ public class Wall
     private Mesh? LowerWallMesh { get; set; }
     private Mesh? SolidWallMesh { get; set; }
 
+    private Sector? NextSector => RawNextSector > -1 ? _map.Sectors[RawNextSector] : null;
+    private Wall NextWall => RawNextWall > -1 ? _map.Walls[RawNextWall] : null;
+
     public List<Mesh> Meshes { get; private set; }
+
+    private Tile Tile => _map.GroupFile.Tiles[RawPicnum];
 
     private readonly MapFile _map;
     private Sector _sector;
@@ -133,7 +140,6 @@ public class Wall
         );
 
         Id = indexInRawWallsArray;
-
         _map = map;
     }
 
@@ -150,16 +156,103 @@ public class Wall
 
     private Mesh? CreateUpperWallMesh()
     {
-        return null;
+        if (!IsPortal)
+            return null;
+
+        var top = _sector.CeilingYCoordinate;
+        var bottom = NextSector.CeilingYCoordinate;
+
+        if (NextSector.FloorYCoordinate >= NextSector.FloorYCoordinate)
+            return null;
+
+        var wallPoints = new List<Vector3>
+        {
+            new(PositionStart.X, bottom, PositionStart.Y),
+            new(NextWall.PositionStart.X, bottom, NextWall.PositionStart.Y),
+            new(NextWall.PositionStart.X, top, NextWall.PositionStart.Y),
+            new(PositionStart.X, top, PositionStart.Y)
+        };
+
+        // Map point of the texture
+        var vertices = wallPoints
+            .Select(position => new Vertex(
+                position,
+                new Vector2(position.X / Tile.Width, position.Z / Tile.Height)
+            ))
+            .ToImmutableList();
+
+        // Define indices
+        var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
+
+        // Create the mesh
+        var mesh = new Mesh(vertices, indices, _sector.FloorTile, _sector, MeshType.LowerWall);
+        return mesh;
     }
 
     private Mesh? CreateLowerWallMesh()
     {
-        return null;
+        if (!IsPortal)
+            return null;
+
+        var top = NextSector.FloorYCoordinate;
+        var bottom = _sector.FloorYCoordinate;
+
+        if (_sector.FloorYCoordinate >= NextSector.FloorYCoordinate)
+            return null; //top = NextSector.FloorYCoordinate;
+
+        var wallPoints = new List<Vector3>
+        {
+            new(PositionStart.X, bottom, PositionStart.Y),
+            new(NextWall.PositionStart.X, bottom, NextWall.PositionStart.Y),
+            new(NextWall.PositionStart.X, top, NextWall.PositionStart.Y),
+            new(PositionStart.X, top, PositionStart.Y)
+        };
+
+        // Map point of the texture
+        var vertices = wallPoints
+            .Select(position => new Vertex(
+                position,
+                new Vector2(position.X / Tile.Width, position.Z / Tile.Height)
+            ))
+            .ToImmutableList();
+
+        // Define indices
+        var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
+
+        // Create the mesh
+        var mesh = new Mesh(vertices, indices, _sector.FloorTile, _sector, MeshType.LowerWall);
+        return mesh;
     }
 
     private Mesh? CreateSolidWallMesh()
     {
-        return null;
+        if (IsPortal)
+            return null;
+
+        var top = _sector.CeilingYCoordinate;
+        var bottom = _sector.FloorYCoordinate;
+
+        var wallPoints = new List<Vector3>
+        {
+            new(PositionStart.X, bottom, PositionStart.Y),
+            new(PositionEnd.X, bottom, PositionEnd.Y),
+            new(PositionEnd.X, top, PositionEnd.Y),
+            new(PositionStart.X, top, PositionStart.Y)
+        };
+
+        // Map point of the texture
+        var vertices = wallPoints
+            .Select(position => new Vertex(
+                position,
+                new Vector2(position.X / Tile.Width, position.Z / Tile.Height)
+            ))
+            .ToImmutableList();
+
+        // Define indices
+        var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
+
+        // Create the mesh
+        var mesh = new Mesh(vertices, indices, _sector.FloorTile, _sector, MeshType.LowerWall);
+        return mesh;
     }
 }
