@@ -12,8 +12,7 @@ public class MapMesh(GraphicsDevice graphicsDevice) : IDisposable
     public void LoadContent(MapFile mapFile)
     {
         _meshes = mapFile
-            .Meshes
-            //.Where(mesh => mesh.Type == MeshType.LowerWall)
+            .Meshes.Where(mesh => mesh.Type == MeshType.LowerWall || mesh.Type == MeshType.Floor)
             .Select(mesh =>
             {
                 var vertices = mesh

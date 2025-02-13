@@ -232,7 +232,7 @@ public class Wall
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
 
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, tile, _sector, MeshType.LowerWall);
+        var mesh = new Mesh(vertices, indices, tile, _sector, MeshType.SolidWall);
         return mesh;
     }
 
