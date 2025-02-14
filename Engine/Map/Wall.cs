@@ -7,12 +7,6 @@ namespace Engine.Map;
 // Define the Wall structure
 public class Wall
 {
-    internal int Id { get; private set; }
-    internal Vector2 PositionStart { get; }
-    internal Vector2 PositionEnd => _map.Walls[RawPoint2].PositionStart;
-    internal bool IsBottomTextureSwapped => (RawCStat & 2) != 0;
-    internal bool IsWallAlignedBottom => (RawCStat & 3) != 0;
-
     /// <summary>
     /// The X coordinate of the wall's starting point.
     /// </summary>
@@ -66,22 +60,22 @@ public class Wall
     /// <summary>
     /// Horizontal and vertical repeat factors for the wall texture, affecting its size.
     /// </summary>
-    private byte RawXRepeat { get; }
+    internal byte RawXRepeat { get; }
 
     /// <summary>
     /// Horizontal and vertical repeat factors for the wall texture, affecting its size.
     /// </summary>
-    private byte RawYRepeat { get; }
+    internal byte RawYRepeat { get; }
 
     /// <summary>
     /// Horizontal and vertical panning offsets for the wall texture, used for alignment.
     /// </summary>
-    private byte RawXPanning { get; }
+    internal byte RawXPanning { get; }
 
     /// <summary>
     /// Vertical panning offset for the wall texture, used for alignment.
     /// </summary>
-    private byte RawYPanning { get; }
+    internal byte RawYPanning { get; }
 
     /// <summary>
     /// Game-specific tags for triggering events or actions when interacting with the wall.
@@ -98,19 +92,54 @@ public class Wall
     /// </summary>
     private short RawExtra { get; }
 
-    private bool YIsFlipped => (RawCStat & 9) != 0;
-    private bool IsPortal => RawNextSector > -1;
+    // Bit 0: Blocking wall
+    private bool IsBlocking => (RawCStat & 1) != 0;
+
+    // Bit 1: Bottoms of invisible walls swapped
+    private bool IsBottomSwapped => (RawCStat & (1 << 1)) != 0;
+
+    // Bit 2: Align picture on bottom (for doors)
+    internal bool IsBottomAligned => (RawCStat & (1 << 2)) != 0;
+
+    // Bit 3: x-flipped
+    internal bool IsXFlipped => (RawCStat & (1 << 3)) != 0;
+
+    // Bit 4: Masking wall (masked wall for textures)
+    private bool IsMasked => (RawCStat & (1 << 4)) != 0;
+
+    // Bit 5: 1-way wall (wall is only visible from one side)
+    private bool IsOneWay => (RawCStat & (1 << 5)) != 0;
+
+    // Bit 6: Blocking wall (hitscan / cliptype 1)
+    private bool IsHitscanBlocking => (RawCStat & (1 << 6)) != 0;
+
+    // Bit 7: Translucence (makes the wall semi-transparent)
+    private bool IsTranslucent => (RawCStat & (1 << 7)) != 0;
+
+    // Bit 8: y-flipped (flips the texture vertically)
+    internal bool IsYFlipped => (RawCStat & (1 << 8)) != 0;
+
+    // Bit 9: Translucence reversing (alternate translucency effect)
+    private bool IsTranslucenceReversed => (RawCStat & (1 << 9)) != 0;
+
+    internal bool IsPortal => RawNextSector > -1;
 
     private Mesh? UpperWallMesh { get; set; }
     private Mesh? LowerWallMesh { get; set; }
     private Mesh? SolidWallMesh { get; set; }
 
     private Sector? NextSector => RawNextSector > -1 ? _map.Sectors[RawNextSector] : null;
-    private Wall NextWall => RawNextWall > -1 ? _map.Walls[RawNextWall] : null;
+    internal Wall NextWall => RawNextWall > -1 ? _map.Walls[RawNextWall] : null;
+    private float WallWidth => Vector2.Distance(PositionStart, PositionEnd);
+    internal int Id { get; private set; }
+    internal Vector2 PositionStart { get; }
+    internal Vector2 PositionEnd => _map.Walls[RawPoint2].PositionStart;
+    internal bool IsBottomTextureSwapped => (RawCStat & 2) != 0;
+    internal bool IsWallAlignedBottom => (RawCStat & 3) != 0;
 
     public List<Mesh> Meshes { get; private set; }
 
-    private Tile Tile => _map.GroupFile.Tiles[RawPicnum];
+    internal Tile Tile => _map.GroupFile.Tiles[RawPicnum];
 
     private readonly MapFile _map;
     private Sector _sector;
@@ -166,25 +195,25 @@ public class Wall
         if (bottom >= top)
             return null;
 
-        var wallPoints = new List<Vector3>
+        var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+
+        var wallHeight = top - bottom;
+        var uvPositions = Utils.CreateWallUvs(this, tile, wallHeight, MeshType.UpperWall);
+
+        var points = new List<Vector3>
         {
             new(PositionStart.X, bottom, PositionStart.Y),
-            new(NextWall.PositionStart.X, bottom, NextWall.PositionStart.Y),
-            new(NextWall.PositionStart.X, top, NextWall.PositionStart.Y),
+            new(PositionEnd.X, bottom, PositionEnd.Y),
+            new(PositionEnd.X, top, PositionEnd.Y),
             new(PositionStart.X, top, PositionStart.Y)
         };
 
-        // Map point of the texture
-        var vertices = wallPoints
-            .Select(position => new Vertex(
-                position,
-                new Vector2(position.X / Tile.Width, position.Y / Tile.Height)
-            ))
-            .ToImmutableList();
+        var vertices = new List<Vertex>();
+        for (var i = 0; i < 4; i++)
+            vertices.Add(new Vertex(points[i], uvPositions[i]));
 
         // Define indices
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
-
         // Create the mesh
         var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.UpperWall);
         return mesh;
@@ -201,32 +230,22 @@ public class Wall
         if (bottom >= top)
             return null;
 
+        var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+
+        var wallHeight = top - bottom;
+        var uvPositions = Utils.CreateWallUvs(this, tile, wallHeight, MeshType.LowerWall);
+
         var points = new List<Vector3>
         {
             new(PositionStart.X, bottom, PositionStart.Y),
-            new(NextWall.PositionStart.X, bottom, NextWall.PositionStart.Y),
-            new(NextWall.PositionStart.X, top, NextWall.PositionStart.Y),
+            new(PositionEnd.X, bottom, PositionEnd.Y),
+            new(PositionEnd.X, top, PositionEnd.Y),
             new(PositionStart.X, top, PositionStart.Y)
         };
 
-        var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
-        var minX = points.Min(p => p.X);
-        var minY = points.Min(p => p.Y);
-        var maxX = points.Max(p => p.X);
-        var maxY = points.Max(p => p.Y);
-
-        var width = maxX - minX;
-        var height = maxY - minY;
-
-        var vertices = points
-            .Select(position => new Vertex(
-                position,
-                new Vector2(
-                    (position.X - minX) / width, // Normalize X
-                    (position.Y - minY) / height // Normalize Y
-                )
-            ))
-            .ToImmutableList();
+        var vertices = new List<Vertex>();
+        for (var i = 0; i < 4; i++)
+            vertices.Add(new Vertex(points[i], uvPositions[i]));
 
         // Define indices
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
@@ -244,7 +263,12 @@ public class Wall
         var top = _sector.CeilingYCoordinate;
         var bottom = _sector.FloorYCoordinate;
 
-        var wallPoints = new List<Vector3>
+        var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+
+        var wallHeight = top - bottom;
+        var uvPositions = Utils.CreateWallUvs(this, tile, wallHeight, MeshType.SolidWall);
+
+        var points = new List<Vector3>
         {
             new(PositionStart.X, bottom, PositionStart.Y),
             new(PositionEnd.X, bottom, PositionEnd.Y),
@@ -252,13 +276,9 @@ public class Wall
             new(PositionStart.X, top, PositionStart.Y)
         };
 
-        // Map point of the texture
-        var vertices = wallPoints
-            .Select(position => new Vertex(
-                position,
-                new Vector2(position.X / Tile.Width, position.Y / Tile.Height)
-            ))
-            .ToImmutableList();
+        var vertices = new List<Vertex>();
+        for (var i = 0; i < 4; i++)
+            vertices.Add(new Vertex(points[i], uvPositions[i]));
 
         // Define indices
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);

@@ -1,3 +1,4 @@
+using Engine;
 using Microsoft.Xna.Framework.Content;
 using MonoBuild.Player;
 
@@ -32,7 +33,7 @@ public class DebugInformation
 
         // Display camera position
         var positionText =
-            $"Position: X={_camera.Position.X:F2}, Y={_camera.Position.Y:F2}, Z={_camera.Position.Z:F2}";
+            $"Position: X={_camera.Position.X:F2}, Y={_camera.Position.Y:F2}, Z={_camera.Position.Z:F2}, Util.Test={Utils.Test:F2}";
 
         _spriteBatch.DrawString(_font, positionText, new Vector2(10, 10), Color.White);
 

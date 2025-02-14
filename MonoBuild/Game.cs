@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Engine;
 using Engine.Group;
 using Engine.Map;
 using Microsoft.Xna.Framework.Input;
@@ -18,6 +19,10 @@ public class Game : Microsoft.Xna.Framework.Game
     private MapMesh _mapMesh;
 
     private Debug _debug;
+
+    GroupFile groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
+
+    private MapFile map;
 
     public Game()
     {
@@ -43,8 +48,8 @@ public class Game : Microsoft.Xna.Framework.Game
 
     protected override void LoadContent()
     {
-        var groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
-        var map = new MapFile(new FileInfo("E1L1.MAP"), groupFile);
+        groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
+        map = new MapFile(new FileInfo("E1L1.MAP"), groupFile);
         _mapMesh.LoadContent(map);
 
         _debug = new Debug(GraphicsDevice);
@@ -55,9 +60,23 @@ public class Game : Microsoft.Xna.Framework.Game
 
     protected override void Update(GameTime gameTime)
     {
+        var keyboard = Keyboard.GetState();
+
         // Exit if ESC is pressed
-        if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+        if (keyboard.IsKeyDown(Keys.Escape))
             Exit();
+
+        if (keyboard.IsKeyDown(Keys.Space))
+        {
+            map = new MapFile(new FileInfo("E1L1.MAP"), groupFile);
+            _mapMesh.LoadContent(map);
+        }
+
+        if (keyboard.IsKeyDown(Keys.Up))
+            Utils.Test += 0.5f;
+
+        if (keyboard.IsKeyDown(Keys.Down))
+            Utils.Test -= 0.5f;
 
         _camera.Update(gameTime);
 
