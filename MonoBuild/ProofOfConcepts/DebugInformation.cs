@@ -33,14 +33,20 @@ public class DebugInformation
 
         // Display camera position
         var positionText =
-            $"Position: X={_camera.Position.X:F2}, Y={_camera.Position.Y:F2}, Z={_camera.Position.Z:F2}, Util.Test={Utils.Test:F2}";
-
+            $"Position: X={_camera.Position.X:F2}, Y={_camera.Position.Y:F2}, Z={_camera.Position.Z:F2}";
         _spriteBatch.DrawString(_font, positionText, new Vector2(10, 10), Color.White);
 
         // Display camera rotation (yaw and pitch)
         var rotationText =
             $"Rotation: Yaw={MathHelper.ToDegrees(_camera.Yaw) % 360:F2}, Pitch={MathHelper.ToDegrees(_camera.Pitch):F2}";
         _spriteBatch.DrawString(_font, rotationText, new Vector2(10, 30), Color.White);
+
+        var sectorText =
+            $"Util.Test={Utils.Test:F2}, SectionID ={GlobalState.HighlightedMesh?.Sector?.Id}, MeshType={GlobalState.HighlightedMesh?.Type}";
+        _spriteBatch.DrawString(_font, sectorText, new Vector2(10, 70), Color.White);
+
+        var wallTest = $"{GlobalState.HighlightedMesh?.Wall?.DebugInfo}";
+        _spriteBatch.DrawString(_font, wallTest, new Vector2(10, 50), Color.White);
 
         _spriteBatch.End();
     }

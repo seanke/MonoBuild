@@ -38,7 +38,7 @@ public class Camera
             MathHelper.PiOver4,
             graphicsDevice.Viewport.AspectRatio,
             0.1f,
-            100000000f
+            1000000f
         );
 
         // Center mouse to prevent jumpy movement at start

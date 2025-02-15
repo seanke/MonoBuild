@@ -7,7 +7,7 @@ namespace MonoBuild.ProofOfConcepts;
 
 public class MapMesh(GraphicsDevice graphicsDevice) : IDisposable
 {
-    List<Tuple<VertexBuffer, IndexBuffer, BasicEffect, Texture2D>> _meshes = new();
+    private List<Mesh> _meshes = new();
 
     public void LoadContent(MapFile mapFile)
     {
@@ -27,7 +27,7 @@ public class MapMesh(GraphicsDevice graphicsDevice) : IDisposable
                     graphicsDevice,
                     typeof(VertexPositionTexture),
                     mesh.Vertices.Count,
-                    BufferUsage.WriteOnly
+                    BufferUsage.None
                 );
                 vertexBuffer.SetData(vertices);
 
@@ -35,7 +35,7 @@ public class MapMesh(GraphicsDevice graphicsDevice) : IDisposable
                     graphicsDevice,
                     typeof(short),
                     mesh.Indices.Count,
-                    BufferUsage.WriteOnly
+                    BufferUsage.None
                 );
                 indexBuffer.SetData(indices);
 
@@ -56,9 +56,20 @@ public class MapMesh(GraphicsDevice graphicsDevice) : IDisposable
                     )
                 };
 
-                return Tuple.Create(vertexBuffer, indexBuffer, effect, texture);
+                return new Mesh
+                {
+                    VertexBuffer = vertexBuffer,
+                    IndexBuffer = indexBuffer,
+                    Effect = effect,
+                    Texture = texture,
+                    Sector = mesh.Sector,
+                    Wall = mesh.Wall,
+                    Type = mesh.Type
+                };
             })
             .ToList();
+
+        GlobalState.Meshes = _meshes;
     }
 
     public void Draw(Matrix viewMatrix, Matrix projectionMatrix)
@@ -67,30 +78,29 @@ public class MapMesh(GraphicsDevice graphicsDevice) : IDisposable
 
         foreach (var mesh in _meshes)
         {
-            // Draw mesh using view and projection matrices
-            var vertexBuffer = mesh.Item1;
-            var indexBuffer = mesh.Item2;
-            var effect = mesh.Item3;
-            var texture = mesh.Item4;
-
-            if (vertexBuffer == null || indexBuffer == null || effect == null)
+            if (mesh.VertexBuffer == null || mesh.IndexBuffer == null || mesh.Effect == null)
                 continue;
 
-            effect.View = viewMatrix; // Update the View matrix from the camera
-            effect.Projection = projectionMatrix; // Update the Projection matrix
-            effect.Texture = texture; // Ensure the texture is set
+            mesh.Effect.View = viewMatrix; // Update the View matrix from the camera
+            mesh.Effect.Projection = projectionMatrix; // Update the Projection matrix
+            mesh.Effect.Texture = mesh.Texture; // Ensure the texture is set
 
-            graphicsDevice.SetVertexBuffer(vertexBuffer);
-            graphicsDevice.Indices = indexBuffer;
+            mesh.Effect.DiffuseColor =
+                GlobalState.HighlightedMesh == mesh
+                    ? Color.Red.ToVector3()
+                    : Color.White.ToVector3();
 
-            foreach (var pass in effect.CurrentTechnique.Passes)
+            graphicsDevice.SetVertexBuffer(mesh.VertexBuffer);
+            graphicsDevice.Indices = mesh.IndexBuffer;
+
+            foreach (var pass in mesh.Effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 graphicsDevice.DrawIndexedPrimitives(
                     PrimitiveType.TriangleList,
                     0,
                     0,
-                    indexBuffer.IndexCount / 3
+                    mesh.IndexBuffer.IndexCount / 3
                 );
             }
         }
@@ -99,12 +109,7 @@ public class MapMesh(GraphicsDevice graphicsDevice) : IDisposable
     public void Dispose()
     {
         foreach (var mesh in _meshes)
-        {
-            mesh.Item1?.Dispose();
-            mesh.Item2?.Dispose();
-            mesh.Item3?.Dispose();
-            mesh.Item4?.Dispose();
-        }
+            mesh.Dispose();
 
         _meshes.Clear();
     }

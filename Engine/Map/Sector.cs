@@ -126,7 +126,7 @@ public class Sector
     /// </summary>
     private short RawExtra { get; }
 
-    internal int Id { get; }
+    public int Id { get; }
 
     public ImmutableList<Mesh> Meshes { get; private set; }
 
@@ -229,7 +229,14 @@ public class Sector
 
         var indices = tessellatedSectorWallLoops.Elements;
 
-        return new Mesh(vertices, indices, _groupFile.Tiles[RawFloorPicnum], this, MeshType.Floor);
+        return new Mesh(
+            vertices,
+            indices,
+            _groupFile.Tiles[RawFloorPicnum],
+            this,
+            MeshType.Floor,
+            null
+        );
     }
 
     private Mesh CreateCeilingMesh(Tess tessellatedSectorWallLoops)
@@ -249,7 +256,8 @@ public class Sector
             indices,
             _groupFile.Tiles[RawCeilingPicnum],
             this,
-            MeshType.Ceiling
+            MeshType.Ceiling,
+            null
         );
     }
 

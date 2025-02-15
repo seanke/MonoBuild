@@ -21,6 +21,13 @@ public class Debug(GraphicsDevice graphicsDevice) : IDisposable
 
     public void Draw()
     {
+        var tile = GlobalState.HighlightedMesh?.Wall?.Tile;
+
+        if (tile != null)
+        {
+            _texture = TextureLoader.LoadTextureFromTile(graphicsDevice, tile);
+        }
+
         if (_texture == null)
             return; // Ensure texture is loaded before drawing
 
@@ -28,7 +35,7 @@ public class Debug(GraphicsDevice graphicsDevice) : IDisposable
         _spriteBatch.Begin();
 
         // Draw texture at position (0,0)
-        _spriteBatch.Draw(_texture, new Vector2(0, 0), Color.White);
+        _spriteBatch.Draw(_texture, new Vector2(0, 100), Color.White);
 
         // End drawing
         _spriteBatch.End();

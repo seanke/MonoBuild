@@ -18,7 +18,8 @@ public class Mesh(
     IEnumerable<int> indices,
     Tile texture,
     Sector sector,
-    MeshType type
+    MeshType type,
+    Wall? wall
 )
 {
     public ImmutableList<Vertex> Vertices { get; } = vertices.ToImmutableList();
@@ -28,4 +29,7 @@ public class Mesh(
     public int SectorId => sector.Id;
 
     public MeshType Type { get; } = type;
+
+    public Sector Sector { get; } = sector;
+    public Wall? Wall { get; } = wall;
 }

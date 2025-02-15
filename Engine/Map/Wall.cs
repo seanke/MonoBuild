@@ -137,9 +137,12 @@ public class Wall
     internal bool IsBottomTextureSwapped => (RawCStat & 2) != 0;
     internal bool IsWallAlignedBottom => (RawCStat & 3) != 0;
 
+    public string DebugInfo =>
+        $"Wall={Id} XR={RawXRepeat} YR={RawYRepeat} XP={RawXPanning} YP={RawYPanning} IBS={IsBottomSwapped} IBA={IsBottomAligned}";
+
     public List<Mesh> Meshes { get; private set; }
 
-    internal Tile Tile => _map.GroupFile.Tiles[RawPicnum];
+    public Tile Tile => _map.GroupFile.Tiles[RawPicnum];
 
     private readonly MapFile _map;
     private Sector _sector;
@@ -215,7 +218,7 @@ public class Wall
         // Define indices
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.UpperWall);
+        var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.UpperWall, this);
         return mesh;
     }
 
@@ -251,7 +254,7 @@ public class Wall
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
 
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, tile, _sector, MeshType.LowerWall);
+        var mesh = new Mesh(vertices, indices, tile, _sector, MeshType.LowerWall, this);
         return mesh;
     }
 
@@ -284,7 +287,7 @@ public class Wall
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
 
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.SolidWall);
+        var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.SolidWall, this);
         return mesh;
     }
 }

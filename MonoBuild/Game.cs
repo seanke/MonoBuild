@@ -18,11 +18,13 @@ public class Game : Microsoft.Xna.Framework.Game
 
     private MapMesh _mapMesh;
 
+    private RaycastPicker _raycastPicker;
+
     private Debug _debug;
 
-    GroupFile groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
+    private GroupFile _groupFile = new(new FileInfo("DUKE3D.GRP"));
 
-    private MapFile map;
+    private MapFile _map;
 
     public Game()
     {
@@ -42,18 +44,19 @@ public class Game : Microsoft.Xna.Framework.Game
         _debugInformation = new DebugInformation(GraphicsDevice, _camera);
         _skybox = new Skybox(GraphicsDevice);
         _mapMesh = new MapMesh(GraphicsDevice);
+        _raycastPicker = new RaycastPicker(GraphicsDevice);
 
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
-        groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
-        map = new MapFile(new FileInfo("E1L1.MAP"), groupFile);
-        _mapMesh.LoadContent(map);
+        _groupFile = new GroupFile(new FileInfo("DUKE3D.GRP"));
+        _map = new MapFile(new FileInfo("E1L1.MAP"), _groupFile);
+        _mapMesh.LoadContent(_map);
 
         _debug = new Debug(GraphicsDevice);
-        _debug.LoadContent(groupFile.Tiles[1]);
+        _debug.LoadContent(_groupFile.Tiles[1]);
 
         _debugInformation.LoadContent(Content);
     }
@@ -68,8 +71,8 @@ public class Game : Microsoft.Xna.Framework.Game
 
         if (keyboard.IsKeyDown(Keys.Space))
         {
-            map = new MapFile(new FileInfo("E1L1.MAP"), groupFile);
-            _mapMesh.LoadContent(map);
+            _map = new MapFile(new FileInfo("E1L1.MAP"), _groupFile);
+            _mapMesh.LoadContent(_map);
         }
 
         if (keyboard.IsKeyDown(Keys.Up))
@@ -79,6 +82,8 @@ public class Game : Microsoft.Xna.Framework.Game
             Utils.Test -= 0.5f;
 
         _camera.Update(gameTime);
+
+        _raycastPicker.Update(_camera.View, _camera.Projection);
 
         base.Update(gameTime);
     }
