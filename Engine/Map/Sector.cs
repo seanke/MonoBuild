@@ -14,7 +14,7 @@ public class Sector
     /// <summary>
     /// Index to the first wall in the sector, used to identify where the sector's wall definitions start.
     /// </summary>
-    private short RawWallPtr { get; }
+    internal short RawWallPtr { get; }
 
     /// <summary>
     /// The number of walls in this sector, determining how many walls are associated with this sector.
@@ -79,7 +79,7 @@ public class Sector
     /// <summary>
     /// Slope of the floor, determining how steep the slope is if the floor is sloped.
     /// </summary>
-    private short RawFloorHeinum { get; }
+    public short RawFloorHeinum { get; }
 
     /// <summary>
     /// Shade offset for the floor, affecting its brightness.
@@ -132,13 +132,16 @@ public class Sector
 
     private Mesh FloorMesh { get; set; }
     private Mesh CeilingMesh { get; set; }
-    private ImmutableList<Wall> Walls { get; set; }
+    internal ImmutableList<Wall> Walls { get; set; }
 
     internal float CeilingYCoordinate { get; }
     internal float FloorYCoordinate { get; }
 
     private Tile FloorTile => _groupFile.Tiles[RawFloorPicnum];
     private Tile CeilingTile => _groupFile.Tiles[RawCeilingPicnum];
+
+    internal bool IsCeilingSloped => (RawCeilingStat & (1 << 1)) != 0;
+    internal bool IsFloorSloped => (RawFloorStat & (1 << 1)) != 0;
 
     private readonly MapFile _mapFile;
     private readonly GroupFile _groupFile;
@@ -220,7 +223,11 @@ public class Sector
     private Mesh CreateFloorMesh(Tess tessellatedSectorWallLoops)
     {
         var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
-            new Vector3(v.Position.X, FloorYCoordinate, v.Position.Z),
+            new Vector3(
+                v.Position.X,
+                Utils.GetFloorHeightAt(new Vector2(v.Position.X, v.Position.Z), this),
+                v.Position.Z
+            ),
             new Vector2(
                 v.Position.X / _groupFile.Tiles[RawFloorPicnum].Width,
                 v.Position.Z / _groupFile.Tiles[RawFloorPicnum].Height

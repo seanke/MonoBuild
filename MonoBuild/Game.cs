@@ -59,6 +59,8 @@ public class Game : Microsoft.Xna.Framework.Game
         _debug.LoadContent(_groupFile.Tiles[1]);
 
         _debugInformation.LoadContent(Content);
+
+        _camera.Position = _map.PlayerStartPosition;
     }
 
     protected override void Update(GameTime gameTime)
@@ -76,10 +78,10 @@ public class Game : Microsoft.Xna.Framework.Game
         }
 
         if (keyboard.IsKeyDown(Keys.Up))
-            Utils.Test += 0.5f;
+            Utils.Test += 0.1f;
 
         if (keyboard.IsKeyDown(Keys.Down))
-            Utils.Test -= 0.5f;
+            Utils.Test -= 0.1f;
 
         _camera.Update(gameTime);
 

@@ -60,22 +60,22 @@ public class Wall
     /// <summary>
     /// Horizontal and vertical repeat factors for the wall texture, affecting its size.
     /// </summary>
-    internal byte RawXRepeat { get; }
+    internal int RawXRepeat { get; }
 
     /// <summary>
     /// Horizontal and vertical repeat factors for the wall texture, affecting its size.
     /// </summary>
-    internal byte RawYRepeat { get; }
+    internal int RawYRepeat { get; }
 
     /// <summary>
     /// Horizontal and vertical panning offsets for the wall texture, used for alignment.
     /// </summary>
-    internal byte RawXPanning { get; }
+    internal int RawXPanning { get; }
 
     /// <summary>
     /// Vertical panning offset for the wall texture, used for alignment.
     /// </summary>
-    internal byte RawYPanning { get; }
+    internal int RawYPanning { get; }
 
     /// <summary>
     /// Game-specific tags for triggering events or actions when interacting with the wall.
@@ -138,11 +138,12 @@ public class Wall
     internal bool IsWallAlignedBottom => (RawCStat & 3) != 0;
 
     public string DebugInfo =>
-        $"Wall={Id} XR={RawXRepeat} YR={RawYRepeat} XP={RawXPanning} YP={RawYPanning} IBS={IsBottomSwapped} IBA={IsBottomAligned}";
+        $"Wall={Id} XR={RawXRepeat} YR={RawYRepeat} XP={RawXPanning} YP={RawYPanning} IBS={IsBottomSwapped} IBA={IsBottomAligned} PIC={RawPicnum} OPN={RawOverPicnum} CSTAT={RawCStat}";
 
     public List<Mesh> Meshes { get; private set; }
 
     public Tile Tile => _map.GroupFile.Tiles[RawPicnum];
+    public Tile OverTile => _map.GroupFile.Tiles[RawOverPicnum];
 
     private readonly MapFile _map;
     private Sector _sector;
@@ -194,13 +195,14 @@ public class Wall
 
         var top = _sector.CeilingYCoordinate;
         var bottom = NextSector.CeilingYCoordinate;
+        var wallHeight = top - bottom;
 
         if (bottom >= top)
             return null;
 
-        var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+        //var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+        var tile = Tile;
 
-        var wallHeight = top - bottom;
         var uvPositions = Utils.CreateWallUvs(this, tile, wallHeight, MeshType.UpperWall);
 
         var points = new List<Vector3>
@@ -218,7 +220,7 @@ public class Wall
         // Define indices
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.UpperWall, this);
+        var mesh = new Mesh(vertices, indices, tile, _sector, MeshType.UpperWall, this);
         return mesh;
     }
 
@@ -266,7 +268,8 @@ public class Wall
         var top = _sector.CeilingYCoordinate;
         var bottom = _sector.FloorYCoordinate;
 
-        var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+        //var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+        var tile = RawOverPicnum == 0 ? Tile : OverTile;
 
         var wallHeight = top - bottom;
         var uvPositions = Utils.CreateWallUvs(this, tile, wallHeight, MeshType.SolidWall);
@@ -287,7 +290,7 @@ public class Wall
         var indices = ImmutableList.Create<int>(0, 1, 2, 2, 3, 0);
 
         // Create the mesh
-        var mesh = new Mesh(vertices, indices, Tile, _sector, MeshType.SolidWall, this);
+        var mesh = new Mesh(vertices, indices, tile, _sector, MeshType.SolidWall, this);
         return mesh;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Numerics;
 using System.Text;
 using Engine.Group;
 
@@ -61,6 +62,13 @@ public class MapFile
     internal int NumSprites { get; }
 
     internal GroupFile GroupFile { get; }
+
+    public Vector3 PlayerStartPosition =>
+        new(
+            RawPosX * Constants.BuildWidthUnitMeterRatio,
+            RawPosZ * Constants.BuildHeightUnitMeterRatio,
+            RawPosY * Constants.BuildWidthUnitMeterRatio
+        );
 
     /// <summary>
     /// Loads a map from a given stream, reading its content and constructing the map file structure.

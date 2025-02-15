@@ -26,11 +26,11 @@ public class RaycastPicker(GraphicsDevice graphicsDevice)
             new Vector2(0, -2) // Slightly down
         };
 
-        List<Ray> rays = new List<Ray>();
+        var rays = new List<Ray>();
 
         foreach (var offset in offsets)
         {
-            Vector2 samplePoint = screenCenter + offset;
+            var samplePoint = screenCenter + offset;
 
             var nearPoint = viewport.Unproject(
                 new Vector3(samplePoint, 0),
@@ -44,7 +44,7 @@ public class RaycastPicker(GraphicsDevice graphicsDevice)
                 viewMatrix,
                 Matrix.Identity
             );
-            Vector3 direction = Vector3.Normalize(farPoint - nearPoint);
+            var direction = Vector3.Normalize(farPoint - nearPoint);
 
             rays.Add(new Ray(nearPoint, direction));
         }

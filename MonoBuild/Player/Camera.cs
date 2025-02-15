@@ -6,7 +6,7 @@ namespace MonoBuild.Player;
 
 public class Camera
 {
-    public Vector3 Position { get; private set; }
+    public Vector3 Position { get; internal set; }
     public Vector3 Forward { get; private set; }
     public Vector3 Right { get; private set; }
     public Vector3 Up { get; private set; }
