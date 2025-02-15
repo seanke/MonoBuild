@@ -107,4 +107,11 @@ public class Skybox
         // Restore the original depth state
         _graphicsDevice.DepthStencilState = originalDepthState;
     }
+
+    public void Dispose()
+    {
+        _vertexBuffer.Dispose();
+        _indexBuffer.Dispose();
+        _effect.Dispose();
+    }
 }

@@ -102,7 +102,9 @@ public class Game : Microsoft.Xna.Framework.Game
 
     protected override void Dispose(bool disposing)
     {
-        //_mapRenderer.Dispose();
+        _mapMesh.Dispose();
+        _debugInformation.Dispose();
+        _skybox.Dispose();
         base.Dispose(disposing);
     }
 }

@@ -12,8 +12,7 @@ public class MapMesh(GraphicsDevice graphicsDevice) : IDisposable
     public void LoadContent(MapFile mapFile)
     {
         _meshes = mapFile
-            .Meshes //.Where(mesh => mesh.Type == MeshType.SolidWall)
-            .Select(mesh =>
+            .Meshes.Select(mesh =>
             {
                 var vertices = mesh
                     .Vertices.Select(vertex => new VertexPositionTexture(

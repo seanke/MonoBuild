@@ -44,4 +44,9 @@ public class DebugInformation
 
         _spriteBatch.End();
     }
+
+    public void Dispose()
+    {
+        _spriteBatch?.Dispose();
+    }
 }
