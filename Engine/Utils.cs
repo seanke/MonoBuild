@@ -92,6 +92,9 @@ public static class Utils
         if (!sector.IsFloorSloped)
             return sector.FloorYCoordinate;
 
+        if (sector.Walls == null || sector.Walls.Count == 0)
+            return sector.FloorYCoordinate;
+
         // Use the first wall’s start point as the reference.
         var wallToSlopeFrom = sector.Walls[0];
 

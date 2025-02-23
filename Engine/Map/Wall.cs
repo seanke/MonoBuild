@@ -244,8 +244,23 @@ public class Wall
         {
             new(PositionStart.X, bottom, PositionStart.Y),
             new(PositionEnd.X, bottom, PositionEnd.Y),
-            new(PositionEnd.X, top, PositionEnd.Y),
-            new(PositionStart.X, top, PositionStart.Y)
+            new(
+                PositionEnd.X,
+                NextSector == null
+                    ? top
+                    : Utils.GetFloorHeightAt(new Vector2(PositionEnd.X, PositionEnd.Y), NextSector),
+                PositionEnd.Y
+            ),
+            new(
+                PositionStart.X,
+                NextSector == null
+                    ? top
+                    : Utils.GetFloorHeightAt(
+                        new Vector2(PositionStart.X, PositionStart.Y),
+                        NextSector
+                    ),
+                PositionStart.Y
+            )
         };
 
         var vertices = new List<Vertex>();
