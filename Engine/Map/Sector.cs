@@ -135,7 +135,7 @@ public class Sector
     internal ImmutableList<Wall> Walls { get; set; }
 
     internal float CeilingYCoordinate { get; }
-    internal float FloorYCoordinate { get; }
+    public float FloorYCoordinate { get; }
 
     private Tile FloorTile => _groupFile.Tiles[RawFloorPicnum];
     private Tile CeilingTile => _groupFile.Tiles[RawCeilingPicnum];

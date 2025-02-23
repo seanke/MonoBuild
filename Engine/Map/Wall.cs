@@ -242,8 +242,16 @@ public class Wall
 
         var points = new List<Vector3>
         {
-            new(PositionStart.X, bottom, PositionStart.Y),
-            new(PositionEnd.X, bottom, PositionEnd.Y),
+            new(
+                PositionStart.X,
+                Utils.GetFloorHeightAt(new Vector2(PositionStart.X, PositionStart.Y), _sector),
+                PositionStart.Y
+            ),
+            new(
+                PositionEnd.X,
+                Utils.GetFloorHeightAt(new Vector2(PositionEnd.X, PositionEnd.Y), _sector),
+                PositionEnd.Y
+            ),
             new(
                 PositionEnd.X,
                 NextSector == null

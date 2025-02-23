@@ -42,7 +42,7 @@ public class DebugInformation
         _spriteBatch.DrawString(_font, rotationText, new Vector2(10, 30), Color.White);
 
         var sectorText =
-            $"Util.Test={Utils.Test:F2}, SectionID ={GlobalState.HighlightedMesh?.Sector?.Id}, MeshType={GlobalState.HighlightedMesh?.Type}, FH={GlobalState.HighlightedMesh?.Sector?.RawFloorHeinum}";
+            $"Util.Test={Utils.Test:F2}, SectionID ={GlobalState.HighlightedMesh?.Sector?.Id}, MeshType={GlobalState.HighlightedMesh?.Type}, FS={GlobalState.HighlightedMesh?.Sector?.RawFloorHeinum}, FY={GlobalState.HighlightedMesh.Sector.FloorYCoordinate}";
         _spriteBatch.DrawString(_font, sectorText, new Vector2(10, 70), Color.White);
 
         var wallTest =
