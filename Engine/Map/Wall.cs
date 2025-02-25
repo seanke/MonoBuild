@@ -235,10 +235,15 @@ public class Wall
         if (bottom >= top)
             return null;
 
-        var tile = !IsBottomTextureSwapped ? Tile : _map.GroupFile.Tiles[RawOverPicnum];
+        var tile = !IsBottomTextureSwapped ? Tile : NextWall.Tile;
 
         var wallHeight = top - bottom;
-        var uvPositions = Utils.CreateWallUvs(this, tile, wallHeight, MeshType.LowerWall);
+        var uvPositions = Utils.CreateWallUvs(
+            !IsBottomTextureSwapped ? this : NextWall,
+            tile,
+            wallHeight,
+            MeshType.LowerWall
+        );
 
         var points = new List<Vector3>
         {
