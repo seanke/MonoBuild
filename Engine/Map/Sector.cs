@@ -147,6 +147,10 @@ public class Sector
     // Bit 1: Slope flag
     internal bool IsCeilingSloped => (RawCeilingStat & (1 << 1)) != 0;
     internal bool IsFloorSloped => (RawFloorStat & (1 << 1)) != 0;
+    
+    // Bit 6: Relative alignment flag (1 = align texture to first wall of sector)
+    internal bool IsCeilingAlignedToFirstWall => (RawCeilingStat & (1 << 6)) != 0;
+    internal bool IsFloorAlignedToFirstWall => (RawFloorStat & (1 << 6)) != 0;
 
     private readonly MapFile _mapFile;
     private readonly GroupFile _groupFile;
@@ -227,15 +231,20 @@ public class Sector
 
     private Mesh CreateFloorMesh(Tess tessellatedSectorWallLoops)
     {
+        var tile = _groupFile.Tiles[RawFloorPicnum];
+        
         var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
             new Vector3(
                 v.Position.X,
                 Utils.GetFloorHeightAt(new Vector2(v.Position.X, v.Position.Z), this),
                 v.Position.Z
             ),
-            new Vector2(
-                v.Position.X / _groupFile.Tiles[RawFloorPicnum].Width,
-                v.Position.Z / _groupFile.Tiles[RawFloorPicnum].Height
+            CalculateFloorCeilingUV(
+                new Vector2(v.Position.X, v.Position.Z),
+                tile,
+                RawFloorXpanning,
+                RawFloorYpanning,
+                IsFloorAlignedToFirstWall
             )
         ));
 
@@ -253,11 +262,16 @@ public class Sector
 
     private Mesh CreateCeilingMesh(Tess tessellatedSectorWallLoops)
     {
+        var tile = _groupFile.Tiles[RawCeilingPicnum];
+        
         var vertices = tessellatedSectorWallLoops.Vertices.Select(v => new Vertex(
             new Vector3(v.Position.X, CeilingYCoordinate, v.Position.Z),
-            new Vector2(
-                v.Position.X / _groupFile.Tiles[RawFloorPicnum].Width,
-                v.Position.Z / _groupFile.Tiles[RawFloorPicnum].Height
+            CalculateFloorCeilingUV(
+                new Vector2(v.Position.X, v.Position.Z),
+                tile,
+                RawCeilingXpanning,
+                RawCeilingYpanning,
+                IsCeilingAlignedToFirstWall
             )
         ));
 
@@ -273,6 +287,46 @@ public class Sector
         );
     }
 
+    private Vector2 CalculateFloorCeilingUV(Vector2 worldPos, Tile tile, byte xpanning, byte ypanning, bool alignToFirstWall)
+    {
+        float u, v;
+        
+        if (alignToFirstWall && Walls.Count > 0)
+        {
+            // Get the first wall of the sector
+            var firstWall = Walls[0];
+            var firstWallStart = firstWall.PositionStart;
+            var firstWallEnd = firstWall.PositionEnd;
+            
+            // Calculate the first wall's direction vector
+            var wallDir = Vector2.Normalize(firstWallEnd - firstWallStart);
+            
+            // Create perpendicular vector (rotated 90 degrees counter-clockwise)
+            var wallPerp = new Vector2(-wallDir.Y, wallDir.X);
+            
+            // Transform world position to wall-aligned coordinates
+            var relativePos = worldPos - firstWallStart;
+            u = Vector2.Dot(relativePos, wallDir);
+            v = Vector2.Dot(relativePos, wallPerp);
+        }
+        else
+        {
+            // Use world coordinates directly (no alignment)
+            u = worldPos.X;
+            v = worldPos.Y;
+        }
+        
+        // Apply panning (0-255 maps to 0-1 of texture)
+        u += (xpanning / 256f) * tile.Width;
+        v += (ypanning / 256f) * tile.Height;
+        
+        // Scale by texture dimensions to get UV coordinates
+        u /= tile.Width;
+        v /= tile.Height;
+        
+        return new Vector2(u, v);
+    }
+    
     private List<List<Wall>> GetSectorWallLoops(Sector sector)
     {
         var result = new List<List<Wall>>();
