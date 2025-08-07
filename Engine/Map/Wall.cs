@@ -190,7 +190,12 @@ public class Wall
 
     private Mesh? CreateUpperWallMesh()
     {
-        if (!IsPortal)
+        if (!IsPortal || NextSector == null)
+            return null;
+
+        // Parallax sky rule: Don't render upper walls between two parallax sectors
+        // Both sectors share the same "infinite" sky, so no wall should be visible
+        if (_sector.HasParallaxCeiling && NextSector.HasParallaxCeiling)
             return null;
 
         var top = _sector.CeilingYCoordinate;
@@ -226,7 +231,12 @@ public class Wall
 
     private Mesh? CreateLowerWallMesh()
     {
-        if (!IsPortal)
+        if (!IsPortal || NextSector == null)
+            return null;
+
+        // Parallax floor rule: Don't render lower walls between two parallax floor sectors
+        // Both sectors share the same "infinite" floor, so no wall should be visible
+        if (_sector.HasParallaxFloor && NextSector.HasParallaxFloor)
             return null;
 
         var bottom = _sector.FloorYCoordinate;

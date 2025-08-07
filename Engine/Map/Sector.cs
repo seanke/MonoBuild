@@ -140,6 +140,11 @@ public class Sector
     private Tile FloorTile => _groupFile.Tiles[RawFloorPicnum];
     private Tile CeilingTile => _groupFile.Tiles[RawCeilingPicnum];
 
+    // Bit 0: Parallax flag (1 = parallaxing sky, 0 = not)
+    internal bool HasParallaxCeiling => (RawCeilingStat & 1) != 0;
+    internal bool HasParallaxFloor => (RawFloorStat & 1) != 0;
+    
+    // Bit 1: Slope flag
     internal bool IsCeilingSloped => (RawCeilingStat & (1 << 1)) != 0;
     internal bool IsFloorSloped => (RawFloorStat & (1 << 1)) != 0;
 
