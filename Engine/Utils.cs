@@ -37,7 +37,7 @@ public static class Utils
             yRepeat = wall.NextWall.RawYRepeat;
         }
 
-        var xPan = xPanning / 128f;
+        var xPan = xPanning / 256f;
         var yPan = yPanning / 256f;
 
         if (
@@ -56,6 +56,20 @@ public static class Utils
         else if (meshType == MeshType.UpperWall && !wall.IsBottomAligned)
         {
             yPan = 0;
+        }
+        else if (meshType == MeshType.LowerWall)
+        {
+            if (wall.IsBottomAligned)
+            {
+                // Bottom-aligned: shift UV so that UV=0 is at the bottom edge of the wall
+                var fullTextureRepeats = wallHeight / tile.Height;
+                yPan -= fullTextureRepeats;
+            }
+            else
+            {
+                // Top-aligned: UV=0 is at the top edge (default)
+                yPan = 0;
+            }
         }
 
         //yPan = Test;
