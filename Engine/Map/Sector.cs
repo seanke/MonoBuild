@@ -148,6 +148,18 @@ public class Sector
     internal bool IsCeilingSloped => (RawCeilingStat & (1 << 1)) != 0;
     internal bool IsFloorSloped => (RawFloorStat & (1 << 1)) != 0;
     
+    // Bit 2: Swap X&Y (rotate 90 degrees)
+    internal bool IsCeilingTextureSwapped => (RawCeilingStat & (1 << 2)) != 0;
+    internal bool IsFloorTextureSwapped => (RawFloorStat & (1 << 2)) != 0;
+    
+    // Bit 4: X-flip
+    internal bool IsCeilingXFlipped => (RawCeilingStat & (1 << 4)) != 0;
+    internal bool IsFloorXFlipped => (RawFloorStat & (1 << 4)) != 0;
+    
+    // Bit 5: Y-flip
+    internal bool IsCeilingYFlipped => (RawCeilingStat & (1 << 5)) != 0;
+    internal bool IsFloorYFlipped => (RawFloorStat & (1 << 5)) != 0;
+    
     // Bit 6: Relative alignment flag (1 = align texture to first wall of sector)
     internal bool IsCeilingAlignedToFirstWall => (RawCeilingStat & (1 << 6)) != 0;
     internal bool IsFloorAlignedToFirstWall => (RawFloorStat & (1 << 6)) != 0;
@@ -244,7 +256,10 @@ public class Sector
                 tile,
                 RawFloorXpanning,
                 RawFloorYpanning,
-                IsFloorAlignedToFirstWall
+                IsFloorAlignedToFirstWall,
+                IsFloorTextureSwapped,
+                IsFloorXFlipped,
+                IsFloorYFlipped
             )
         ));
 
@@ -271,7 +286,10 @@ public class Sector
                 tile,
                 RawCeilingXpanning,
                 RawCeilingYpanning,
-                IsCeilingAlignedToFirstWall
+                IsCeilingAlignedToFirstWall,
+                IsCeilingTextureSwapped,
+                IsCeilingXFlipped,
+                IsCeilingYFlipped
             )
         ));
 
@@ -287,7 +305,8 @@ public class Sector
         );
     }
 
-    private Vector2 CalculateFloorCeilingUV(Vector2 worldPos, Tile tile, byte xpanning, byte ypanning, bool alignToFirstWall)
+    private Vector2 CalculateFloorCeilingUV(Vector2 worldPos, Tile tile, byte xpanning, byte ypanning, 
+        bool alignToFirstWall, bool swapXY, bool xFlip, bool yFlip)
     {
         float u, v;
         
@@ -314,6 +333,27 @@ public class Sector
             // Use world coordinates directly (no alignment)
             u = worldPos.X;
             v = worldPos.Y;
+        }
+        
+        // Apply texture rotation flags BEFORE scaling
+        // Bit 2: Swap X&Y (rotate 90 degrees)
+        if (swapXY)
+        {
+            var temp = u;
+            u = v;
+            v = temp;
+        }
+        
+        // Bit 4: X-flip
+        if (xFlip)
+        {
+            u = -u;
+        }
+        
+        // Bit 5: Y-flip  
+        if (yFlip)
+        {
+            v = -v;
         }
         
         // Apply panning (0-255 maps to 0-1 of texture)
