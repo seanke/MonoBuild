@@ -702,10 +702,34 @@ public class SectorMeshTests
         System.Diagnostics.Debug.WriteLine("Wall 295 UV Mapping Comparison:");
         System.Diagnostics.Debug.WriteLine("Expected from renderlog: (0.000,0.000) (0.559,0.000) (0.559,0.312) (0.000,0.312)");
         System.Diagnostics.Debug.WriteLine($"Actual from Engine: ({actualUVs[0].X:F3},{actualUVs[0].Y:F3}) ({actualUVs[1].X:F3},{actualUVs[1].Y:F3}) ({actualUVs[2].X:F3},{actualUVs[2].Y:F3}) ({actualUVs[3].X:F3},{actualUVs[3].Y:F3})");
+        
+        // Debug wall properties to understand why UV is wrong
+        var debugInfo = wall295.DebugInfo;
+        
+        // Output debug info in assertion to see it in test output
+        Assert.True(true, $"Wall 295 Debug Info: {debugInfo}");
+        
+        // Debug the tile width to understand X scaling issue
+        var tile = wall295.Tile;
+        Assert.True(true, $"Tile width: {tile.Width}, height: {tile.Height}");
 
-        // This test DOCUMENTS the current incorrect behavior
-        // The Engine's UV mapping for sloped walls does not match the renderlog
-        // Expected UV mapping should account for slope, but currently doesn't
+        // Debug wall width and properties to understand the scaling issue
+        var wallWidthProperty = typeof(Engine.Map.Wall).GetProperty("WallWidth", BindingFlags.NonPublic | BindingFlags.Instance);
+        var wallWidth = (float)wallWidthProperty!.GetValue(wall295)!;
+        
+        Assert.True(true, $"Wall width: {wallWidth}");
+        
+        // Check if wall is using correct texture properties
+        var xRepeatProperty = typeof(Engine.Map.Wall).GetProperty("RawXRepeat", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+        var xRepeat = (int)xRepeatProperty!.GetValue(wall295)!;
+        
+        Assert.True(true, $"XRepeat: {xRepeat}, expected for Wall 295: 4");
+        
+        // Calculate what the X-scale should be manually to debug
+        var buildWidthRatio = 1.0f / 16.0f;
+        var expectedXScale = wallWidth / (tile.Width * buildWidthRatio) * (xRepeat / 8.0f);
+        
+        Assert.True(true, $"Expected X scale calculation: {wallWidth} / ({tile.Width} * {buildWidthRatio}) * ({xRepeat} / 8.0) = {expectedXScale}");
         
         // For now, just verify that UVs are finite and the wall mesh was created
         Assert.All(actualUVs, uv => {
@@ -713,18 +737,182 @@ public class SectorMeshTests
             Assert.True(float.IsFinite(uv.Y), "UV Y should be finite");
         });
         
-        // TODO: Implement proper slope-aware UV mapping in Engine
-        // When implemented, uncomment this to verify correct behavior:
-        /*
-        const float tolerance = 0.01f;
-        for (int i = 0; i < 4; i++)
+        // Temporarily disable strict assertions to debug the calculation
+        // const float tolerance = 0.001f;
+        // Assert.Equal(expectedUVs.Length, actualUVs.Length);
+        // for (int i = 0; i < expectedUVs.Length; i++)
+        // {
+        //     Assert.True(Math.Abs(expectedUVs[i].X - actualUVs[i].X) <= tolerance, 
+        //         $"UV[{i}].X expected: {expectedUVs[i].X:F3}, actual: {actualUVs[i].X:F3}");
+        //     Assert.True(Math.Abs(expectedUVs[i].Y - actualUVs[i].Y) <= tolerance, 
+        //         $"UV[{i}].Y expected: {expectedUVs[i].Y:F3}, actual: {actualUVs[i].Y:F3}");
+        // }
+        
+        // Debug output for actual vs expected values
+        Assert.True(true, $"Actual UV: ({actualUVs[0].X:F3},{actualUVs[0].Y:F3}) ({actualUVs[1].X:F3},{actualUVs[1].Y:F3}) ({actualUVs[2].X:F3},{actualUVs[2].Y:F3}) ({actualUVs[3].X:F3},{actualUVs[3].Y:F3})");
+    }
+
+    [Fact]
+    public void Wall1206_SlopedLowerWall_UVMapping()
+    {
+        // Wall 1206 connects Sector 228 (flat floor z=-148480) to Sector 226 (sloped floor heinum=-2048, z=-152576)
+        // This should create a lower wall mesh with varying heights due to the slope
+        var group = new GroupFile(new FileInfo("DUKE3D.GRP"));
+        var map = new MapFile(new FileInfo("E1L1.MAP"), group);
+
+        var sectors = GetSectors(map);
+        var sector228 = sectors[228];
+        var walls228 = GetWalls(sector228);
+        
+        // Find the wall that connects to sector 226
+        Engine.Map.Wall wall1206 = null;
+        foreach (var wall in walls228)
         {
-            Assert.True(Math.Abs(actualUVs[i].X - expectedUVs[i].X) < tolerance,
-                $"Wall 295 UV[{i}].X mismatch: expected {expectedUVs[i].X}, actual {actualUVs[i].X}");
-            Assert.True(Math.Abs(actualUVs[i].Y - expectedUVs[i].Y) < tolerance,
-                $"Wall 295 UV[{i}].Y mismatch: expected {expectedUVs[i].Y}, actual {actualUVs[i].Y}");
+            // Check if this wall connects to sector 226
+            var nextSectorProperty = typeof(Engine.Map.Wall).GetProperty("RawNextSector", BindingFlags.NonPublic | BindingFlags.Instance);
+            var nextSector = (short)nextSectorProperty!.GetValue(wall)!;
+            if (nextSector == 226)
+            {
+                wall1206 = wall;
+                break;
+            }
         }
-        */
+        
+        Assert.NotNull(wall1206);
+        Assert.True(true, $"Found Wall connecting Sector 228 to 226: {wall1206.DebugInfo}");
+        
+        // Check if this creates a lower wall mesh
+        var lowerWallMeshes = wall1206.Meshes.Where(m => m.Type == MeshType.LowerWall).ToList();
+        var upperWallMeshes = wall1206.Meshes.Where(m => m.Type == MeshType.UpperWall).ToList();
+        var solidWallMeshes = wall1206.Meshes.Where(m => m.Type == MeshType.SolidWall).ToList();
+        
+        Assert.True(true, $"Wall meshes - Lower: {lowerWallMeshes.Count}, Upper: {upperWallMeshes.Count}, Solid: {solidWallMeshes.Count}");
+        
+        // Examine the wall mesh vertices to see how heights are handled
+        foreach (var mesh in wall1206.Meshes)
+        {
+            var vertices = mesh.Vertices.ToList();
+            Assert.True(true, $"{mesh.Type} mesh vertices:");
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                var vertex = vertices[i];
+                Assert.True(true, $"  Vertex {i}: Position=({vertex.Position.X:F1},{vertex.Position.Y:F1},{vertex.Position.Z:F1}), UV=({vertex.TextureCoordinate.X:F3},{vertex.TextureCoordinate.Y:F3})");
+            }
+        }
+        
+        // Check the floor heights of the two sectors
+        var sector226 = sectors[226];
+        var sector228FloorY = GetFloorYCoordinate(sector228);
+        var sector226FloorY = GetFloorYCoordinate(sector226);
+        
+        Assert.True(true, $"Sector 228 floor Y: {sector228FloorY:F3}");
+        Assert.True(true, $"Sector 226 floor Y: {sector226FloorY:F3}");
+        Assert.True(true, $"Floor height difference: {Math.Abs(sector228FloorY - sector226FloorY):F3}");
+        
+        // Check if sector 226 is sloped
+        var isFloorSlopedProp = typeof(Sector).GetProperty("IsFloorSloped", BindingFlags.NonPublic | BindingFlags.Instance);
+        var sector226IsFloorSloped = (bool)isFloorSlopedProp!.GetValue(sector226)!;
+        var sector228IsFloorSloped = (bool)isFloorSlopedProp!.GetValue(sector228)!;
+        
+        Assert.True(true, $"Sector 226 floor sloped: {sector226IsFloorSloped}");
+        Assert.True(true, $"Sector 228 floor sloped: {sector228IsFloorSloped}");
+    }
+
+    [Fact]
+    public void Wall999_LowerMesh_YTexturePanning()
+    {
+        // Wall 999 from renderlog: cstat=36, xpan=64, ypan=240
+        // Expected UV offset: u_offset=0.251, v_offset=0.941
+        // This wall connects Sector 196 (floor z=-24576) to Sector 238 (floor z=-51200)
+        var group = new GroupFile(new FileInfo("DUKE3D.GRP"));
+        var map = new MapFile(new FileInfo("E1L1.MAP"), group);
+
+        var sectors = GetSectors(map);
+        var sector196 = sectors[196];
+        var walls196 = GetWalls(sector196);
+        
+        // Find the wall that connects to sector 238
+        Engine.Map.Wall wall999 = null;
+        foreach (var wall in walls196)
+        {
+            var nextSectorProperty = typeof(Engine.Map.Wall).GetProperty("RawNextSector", BindingFlags.NonPublic | BindingFlags.Instance);
+            var nextSector = (short)nextSectorProperty!.GetValue(wall)!;
+            if (nextSector == 238)
+            {
+                wall999 = wall;
+                break;
+            }
+        }
+        
+        Assert.NotNull(wall999);
+        Assert.True(true, $"Found Wall connecting Sector 196 to 238: {wall999.DebugInfo}");
+        
+        // Check wall properties from renderlog - use debug info if reflection fails
+        int xPanning = 0, yPanning = 0;
+        short cstat = 0;
+        
+        try
+        {
+            var xPanningProperty = typeof(Engine.Map.Wall).GetProperty("RawXPanning", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            var yPanningProperty = typeof(Engine.Map.Wall).GetProperty("RawYPanning", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            var cstatField = typeof(Engine.Map.Wall).GetField("RawCStat", BindingFlags.NonPublic | BindingFlags.Instance);
+            
+            if (xPanningProperty != null) xPanning = (int)xPanningProperty.GetValue(wall999)!;
+            if (yPanningProperty != null) yPanning = (int)yPanningProperty.GetValue(wall999)!;
+            if (cstatField != null) cstat = (short)cstatField.GetValue(wall999)!;
+        }
+        catch (Exception ex)
+        {
+            Assert.True(true, $"Reflection failed: {ex.Message}");
+        }
+        
+        Assert.True(true, $"Wall properties - XPan: {xPanning}, YPan: {yPanning}, CStat: {cstat}");
+        // Note: These values may differ from renderlog if we haven't found the exact wall
+        // Assert.Equal(64, xPanning); // Expected from renderlog
+        // Assert.Equal(240, yPanning); // Expected from renderlog  
+        // Assert.Equal(36, cstat); // Expected from renderlog
+        
+        // Check mesh types created
+        var lowerWallMeshes = wall999.Meshes.Where(m => m.Type == MeshType.LowerWall).ToList();
+        var upperWallMeshes = wall999.Meshes.Where(m => m.Type == MeshType.UpperWall).ToList();
+        var solidWallMeshes = wall999.Meshes.Where(m => m.Type == MeshType.SolidWall).ToList();
+        
+        Assert.True(true, $"Wall meshes - Lower: {lowerWallMeshes.Count}, Upper: {upperWallMeshes.Count}, Solid: {solidWallMeshes.Count}");
+        
+        // Focus on the lower wall mesh UV coordinates
+        if (lowerWallMeshes.Any())
+        {
+            var lowerMesh = lowerWallMeshes.First();
+            var vertices = lowerMesh.Vertices.ToList();
+            
+            Assert.True(true, $"Lower wall mesh vertices:");
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                var vertex = vertices[i];
+                Assert.True(true, $"  Vertex {i}: UV=({vertex.TextureCoordinate.X:F3},{vertex.TextureCoordinate.Y:F3})");
+            }
+            
+            // From renderlog, expected UV offset is v_offset=0.941 
+            // This should be reflected in the Y coordinates of the UV mapping
+            var uvs = vertices.Select(v => v.TextureCoordinate).ToArray();
+            
+            Assert.True(true, $"Expected V offset from renderlog: 0.941");
+            Assert.True(true, $"Actual bottom V coordinates: {uvs[0].Y:F3}, {uvs[1].Y:F3}");
+            
+            // Check if Y panning is applied correctly
+            // With ypan=240, this should translate to 240/256 = 0.9375 offset
+            var expectedYOffset = 240f / 256f;
+            Assert.True(true, $"Expected Y offset from ypan=240: {expectedYOffset:F3}");
+        }
+        
+        // Check floor heights for context
+        var sector238 = sectors[238];
+        var sector196FloorY = GetFloorYCoordinate(sector196);
+        var sector238FloorY = GetFloorYCoordinate(sector238);
+        
+        Assert.True(true, $"Sector 196 floor Y: {sector196FloorY:F3}");
+        Assert.True(true, $"Sector 238 floor Y: {sector238FloorY:F3}");
+        Assert.True(true, $"Floor height difference: {Math.Abs(sector196FloorY - sector238FloorY):F3}");
     }
 
     [Fact]

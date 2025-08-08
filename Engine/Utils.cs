@@ -16,6 +16,17 @@ public static class Utils
         MeshType meshType
     )
     {
+        return CreateWallUvs(wall, tile, wallHeight, wallHeight, meshType);
+    }
+
+    internal static Vector2[] CreateWallUvs(
+        Wall wall,
+        Tile tile,
+        float leftWallHeight,
+        float rightWallHeight,
+        MeshType meshType
+    )
+    {
         if (
             meshType != MeshType.LowerWall
             && meshType != MeshType.UpperWall
@@ -40,13 +51,13 @@ public static class Utils
         var xPan = xPanning / 256f;
         var yPan = yPanning / 256f;
 
-        if (
-            (meshType == MeshType.UpperWall && wall.IsBottomAligned)
-            || (!wall.IsBottomAligned && meshType == MeshType.SolidWall)
-        )
+        // Use left wall height for Y panning calculations (could be average, but left is simpler)
+        var avgWallHeight = (leftWallHeight + rightWallHeight) / 2f;
+
+        if (meshType == MeshType.UpperWall && wall.IsBottomAligned)
         {
             // This value will be something like 80.
-            var extraTileLeftOver = wallHeight % tile.Height;
+            var extraTileLeftOver = avgWallHeight % tile.Height;
 
             // This value will be something like 0.5.
             var yShiftToAlignWithRoof = extraTileLeftOver / tile.Height;
@@ -62,7 +73,7 @@ public static class Utils
             if (wall.IsBottomAligned)
             {
                 // Bottom-aligned: shift UV so that UV=0 is at the bottom edge of the wall
-                var fullTextureRepeats = wallHeight / tile.Height;
+                var fullTextureRepeats = avgWallHeight / tile.Height;
                 yPan -= fullTextureRepeats;
             }
             else
@@ -77,19 +88,27 @@ public static class Utils
         //if (wall.IsBottomAligned)
         //    yPan = 0f;
 
-        var xScale = xRepeat * 8f / tile.Width + xPan;
-        var yScale = wallHeight / ((float)tile.Height) * (yRepeat / 8f) * -1 + yPan;
+        // Calculate X scale based on texture repetition
+        // Build engine: higher xRepeat = more texture repetitions across the wall
+        var xScale = (xRepeat / 8f) + xPan;
+
+        // For varying wall heights, calculate Y scale for each side
+        var leftYScale = leftWallHeight / tile.Height * (yRepeat / 8f) * -1 + yPan;
+        var rightYScale = rightWallHeight / tile.Height * (yRepeat / 8f) * -1 + yPan;
 
         if (wall.IsXFlipped)
             xScale *= -1f;
 
         if (wall.IsYFlipped)
-            yScale *= -1f;
+        {
+            leftYScale *= -1f;
+            rightYScale *= -1f;
+        }
 
         var uvBottomLeft = new Vector2(xPan, yPan);
         var uvBottomRight = new Vector2(xScale, yPan);
-        var uvTopRight = new Vector2(xScale, yScale);
-        var uvTopLeft = new Vector2(xPan, yScale);
+        var uvTopRight = new Vector2(xScale, rightYScale);
+        var uvTopLeft = new Vector2(xPan, leftYScale);
 
         // The upper mesh needs to align the each of the textures to the top of the wall
         if (meshType == MeshType.UpperWall)

@@ -247,11 +247,20 @@ public class Wall
 
         var tile = !IsBottomTextureSwapped ? Tile : NextWall.Tile;
 
-        var wallHeight = top - bottom;
+        // Calculate the actual heights at each end of the wall
+        var leftFloorHeight = Utils.GetFloorHeightAt(new Vector2(PositionStart.X, PositionStart.Y), _sector);
+        var rightFloorHeight = Utils.GetFloorHeightAt(new Vector2(PositionEnd.X, PositionEnd.Y), _sector);
+        var leftTopHeight = NextSector == null ? top : Utils.GetFloorHeightAt(new Vector2(PositionStart.X, PositionStart.Y), NextSector);
+        var rightTopHeight = NextSector == null ? top : Utils.GetFloorHeightAt(new Vector2(PositionEnd.X, PositionEnd.Y), NextSector);
+        
+        var leftWallHeight = leftTopHeight - leftFloorHeight;
+        var rightWallHeight = rightTopHeight - rightFloorHeight;
+        
         var uvPositions = Utils.CreateWallUvs(
             !IsBottomTextureSwapped ? this : NextWall,
             tile,
-            wallHeight,
+            leftWallHeight,
+            rightWallHeight,
             MeshType.LowerWall
         );
 
