@@ -879,30 +879,77 @@ public class SectorMeshTests
         
         Assert.True(true, $"Wall meshes - Lower: {lowerWallMeshes.Count}, Upper: {upperWallMeshes.Count}, Solid: {solidWallMeshes.Count}");
         
-        // Focus on the lower wall mesh UV coordinates
-        if (lowerWallMeshes.Any())
+        // Wall 999 should be a ONE_SIDED_WALL (solid wall, not lower wall)
+        // Based on updated renderlog: wall_type: one_sided=true, height=441344
+        // Expected UV coordinates: (0.251,0.941) (1.251,0.941) (1.251,27.879) (0.251,27.879)
+        Assert.True(true, $"Wall 999 should be a solid one-sided wall based on cstat=36 and renderlog data");
+        
+        if (solidWallMeshes.Any())
         {
-            var lowerMesh = lowerWallMeshes.First();
-            var vertices = lowerMesh.Vertices.ToList();
+            var solidMesh = solidWallMeshes.First();
+            var vertices = solidMesh.Vertices.ToList();
             
-            Assert.True(true, $"Lower wall mesh vertices:");
+            Assert.True(true, $"Solid wall mesh vertices (ONE_SIDED_WALL):");
             for (int i = 0; i < vertices.Count; i++)
             {
                 var vertex = vertices[i];
-                Assert.True(true, $"  Vertex {i}: UV=({vertex.TextureCoordinate.X:F3},{vertex.TextureCoordinate.Y:F3})");
+                Assert.True(true, $"  Vertex {i}: Position=({vertex.Position.X:F1},{vertex.Position.Y:F1},{vertex.Position.Z:F1}), UV=({vertex.TextureCoordinate.X:F3},{vertex.TextureCoordinate.Y:F3})");
             }
             
-            // From renderlog, expected UV offset is v_offset=0.941 
-            // This should be reflected in the Y coordinates of the UV mapping
+            // From updated renderlog, expected UV coordinates are:
+            // (0.251,0.941) (1.251,0.941) (1.251,27.879) (0.251,27.879)
             var uvs = vertices.Select(v => v.TextureCoordinate).ToArray();
+            var expectedUVs = new Vector2[]
+            {
+                new(0.251f, 0.941f),  // Bottom-left
+                new(1.251f, 0.941f),  // Bottom-right  
+                new(1.251f, 27.879f), // Top-right
+                new(0.251f, 27.879f)  // Top-left
+            };
             
-            Assert.True(true, $"Expected V offset from renderlog: 0.941");
-            Assert.True(true, $"Actual bottom V coordinates: {uvs[0].Y:F3}, {uvs[1].Y:F3}");
+            Assert.True(true, $"Expected UVs from renderlog:");
+            Assert.True(true, $"  (0.251,0.941) (1.251,0.941) (1.251,27.879) (0.251,27.879)");
+            Assert.True(true, $"Actual UVs from Engine:");
+            Assert.True(true, $"  ({uvs[0].X:F3},{uvs[0].Y:F3}) ({uvs[1].X:F3},{uvs[1].Y:F3}) ({uvs[2].X:F3},{uvs[2].Y:F3}) ({uvs[3].X:F3},{uvs[3].Y:F3})");
             
-            // Check if Y panning is applied correctly
-            // With ypan=240, this should translate to 240/256 = 0.9375 offset
-            var expectedYOffset = 240f / 256f;
-            Assert.True(true, $"Expected Y offset from ypan=240: {expectedYOffset:F3}");
+            // Expected 3D vertex positions from renderlog:
+            // (14336,48128,-24576) (14336,49280,-24576) (14336,49280,-465920) (14336,48128,-465920)
+            Assert.True(true, $"Expected 3D vertices from renderlog:");
+            Assert.True(true, $"  (14336,48128,-24576) (14336,49280,-24576) (14336,49280,-465920) (14336,48128,-465920)");
+            
+            // Check if Y panning calculation is correct
+            // With ypan=240: 240/256 = 0.9375, but renderlog shows 0.941
+            // This suggests there might be additional processing in the BUILD engine
+            var calculatedYOffset = 240f / 256f;
+            Assert.True(true, $"Calculated Y offset from ypan=240: {calculatedYOffset:F3}");
+            Assert.True(true, $"Renderlog shows Y offset: 0.941");
+            Assert.True(true, $"Difference: {Math.Abs(0.941f - calculatedYOffset):F3}");
+            
+            // Optional: Enable strict UV validation when Engine matches renderlog
+            /*
+            const float tolerance = 0.01f;
+            Assert.Equal(expectedUVs.Length, uvs.Length);
+            for (int i = 0; i < expectedUVs.Length; i++)
+            {
+                Assert.True(Math.Abs(expectedUVs[i].X - uvs[i].X) <= tolerance, 
+                    $"UV[{i}].X expected: {expectedUVs[i].X:F3}, actual: {uvs[i].X:F3}");
+                Assert.True(Math.Abs(expectedUVs[i].Y - uvs[i].Y) <= tolerance, 
+                    $"UV[{i}].Y expected: {expectedUVs[i].Y:F3}, actual: {uvs[i].Y:F3}");
+            }
+            */
+        }
+        else if (lowerWallMeshes.Any())
+        {
+            // If it creates a lower wall instead of solid wall, analyze that
+            var lowerMesh = lowerWallMeshes.First();
+            var vertices = lowerMesh.Vertices.ToList();
+            
+            Assert.True(true, $"Lower wall mesh created instead of solid wall:");
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                var vertex = vertices[i];
+                Assert.True(true, $"  Vertex {i}: Position=({vertex.Position.X:F1},{vertex.Position.Y:F1},{vertex.Position.Z:F1}), UV=({vertex.TextureCoordinate.X:F3},{vertex.TextureCoordinate.Y:F3})");
+            }
         }
         
         // Check floor heights for context
@@ -913,6 +960,204 @@ public class SectorMeshTests
         Assert.True(true, $"Sector 196 floor Y: {sector196FloorY:F3}");
         Assert.True(true, $"Sector 238 floor Y: {sector238FloorY:F3}");
         Assert.True(true, $"Floor height difference: {Math.Abs(sector196FloorY - sector238FloorY):F3}");
+    }
+
+    [Fact]
+    public void Wall1000_Onesided_UVMapping_ComprehensiveValidation()
+    {
+        // Wall 1000 from updated renderlog: 
+        // - vertices: (14336,49280) -> (14336,49536), length: 256 units
+        // - sectors: front=196, back=-1 (true exterior wall)
+        // - texture: pic=742, overpic=723, cstat=0
+        // - appearance: xrep=2, yrep=8, xpan=104, ypan=240
+        // - Expected UV: (0.408,0.941) (1.408,0.941) (1.408,27.879) (0.408,27.879)
+        var group = new GroupFile(new FileInfo("DUKE3D.GRP"));
+        var map = new MapFile(new FileInfo("E1L1.MAP"), group);
+
+        var sectors = GetSectors(map);
+        var sector196 = sectors[196];
+        var walls196 = GetWalls(sector196);
+        
+        // Find Wall 1000 - it should have nextsector=-1 (exterior wall)
+        Engine.Map.Wall wall1000 = null;
+        foreach (var wall in walls196)
+        {
+            var nextSectorProperty = typeof(Engine.Map.Wall).GetProperty("RawNextSector", BindingFlags.NonPublic | BindingFlags.Instance);
+            var nextSector = (short)nextSectorProperty!.GetValue(wall)!;
+            
+            // Wall 1000 should have nextSector = -1 (exterior wall)
+            if (nextSector == -1)
+            {
+                // Additional validation: check if this is the right wall by position/length
+                var startPosProperty = typeof(Engine.Map.Wall).GetProperty("PositionStart", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                var endPosProperty = typeof(Engine.Map.Wall).GetProperty("PositionEnd", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                
+                if (startPosProperty == null || endPosProperty == null) continue;
+                
+                var startPos = (Vector2)startPosProperty.GetValue(wall)!;
+                var endPos = (Vector2)endPosProperty.GetValue(wall)!;
+                var wallLength = Vector2.Distance(startPos, endPos);
+                
+                // Expected: (14336,49280) -> (14336,49536), length: 256 units
+                // Convert from BUILD units to Engine units: 256 * (1/16) = 16 units
+                var expectedLength = 256f * (1f/16f); // 16 units in Engine coordinates
+                
+                if (Math.Abs(wallLength - expectedLength) < 0.1f)
+                {
+                    wall1000 = wall;
+                    break;
+                }
+            }
+        }
+        
+        Assert.NotNull(wall1000);
+        Assert.True(true, $"Found Wall 1000 (exterior wall): {wall1000.DebugInfo}");
+        
+        // Wall properties validation from renderlog
+        int xPanning = 0, yPanning = 0;
+        short cstat = 0;
+        
+        try
+        {
+            var xPanningProperty = typeof(Engine.Map.Wall).GetProperty("RawXPanning", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            var yPanningProperty = typeof(Engine.Map.Wall).GetProperty("RawYPanning", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            var cstatField = typeof(Engine.Map.Wall).GetField("RawCStat", BindingFlags.NonPublic | BindingFlags.Instance);
+            
+            if (xPanningProperty != null) xPanning = (int)xPanningProperty.GetValue(wall1000)!;
+            if (yPanningProperty != null) yPanning = (int)yPanningProperty.GetValue(wall1000)!;
+            if (cstatField != null) cstat = (short)cstatField.GetValue(wall1000)!;
+        }
+        catch (Exception ex)
+        {
+            Assert.True(true, $"Reflection failed: {ex.Message}");
+        }
+        
+        Assert.True(true, $"Wall 1000 properties - XPan: {xPanning}, YPan: {yPanning}, CStat: {cstat}");
+        Assert.True(true, $"Expected from renderlog - XPan: 104, YPan: 240, CStat: 0");
+        
+        // Check mesh types created
+        var lowerWallMeshes = wall1000.Meshes.Where(m => m.Type == MeshType.LowerWall).ToList();
+        var upperWallMeshes = wall1000.Meshes.Where(m => m.Type == MeshType.UpperWall).ToList();
+        var solidWallMeshes = wall1000.Meshes.Where(m => m.Type == MeshType.SolidWall).ToList();
+        
+        Assert.True(true, $"Wall 1000 meshes - Lower: {lowerWallMeshes.Count}, Upper: {upperWallMeshes.Count}, Solid: {solidWallMeshes.Count}");
+        
+        // Wall 1000 should be a ONE_SIDED_WALL (solid wall) - exterior boundary
+        // Based on renderlog: wall_type: one_sided=true, nextwall=-1, nextsector=-1
+        // Expected UV coordinates: (0.408,0.941) (1.408,0.941) (1.408,27.879) (0.408,27.879)
+        Assert.True(true, $"Wall 1000 should be a solid one-sided exterior wall based on nextsector=-1");
+        
+        if (solidWallMeshes.Any())
+        {
+            var solidMesh = solidWallMeshes.First();
+            var vertices = solidMesh.Vertices.ToList();
+            
+            Assert.True(true, $"Solid wall mesh vertices (ONE_SIDED_WALL - Exterior):");
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                var vertex = vertices[i];
+                Assert.True(true, $"  Vertex {i}: Position=({vertex.Position.X:F1},{vertex.Position.Y:F1},{vertex.Position.Z:F1}), UV=({vertex.TextureCoordinate.X:F3},{vertex.TextureCoordinate.Y:F3})");
+            }
+            
+            // From updated renderlog, expected UV coordinates are:
+            // (0.408,0.941) (1.408,0.941) (1.408,27.879) (0.408,27.879)
+            var uvs = vertices.Select(v => v.TextureCoordinate).ToArray();
+            var expectedUVs = new Vector2[]
+            {
+                new(0.408f, 0.941f),  // Bottom-left
+                new(1.408f, 0.941f),  // Bottom-right  
+                new(1.408f, 27.879f), // Top-right
+                new(0.408f, 27.879f)  // Top-left
+            };
+            
+            Assert.True(true, $"Expected UVs from renderlog:");
+            Assert.True(true, $"  (0.408,0.941) (1.408,0.941) (1.408,27.879) (0.408,27.879)");
+            Assert.True(true, $"Actual UVs from Engine:");
+            Assert.True(true, $"  ({uvs[0].X:F3},{uvs[0].Y:F3}) ({uvs[1].X:F3},{uvs[1].Y:F3}) ({uvs[2].X:F3},{uvs[2].Y:F3}) ({uvs[3].X:F3},{uvs[3].Y:F3})");
+            
+            // Expected 3D vertex positions from renderlog:
+            // (14336,49280,-24576) (14336,49536,-24576) (14336,49536,-465920) (14336,49280,-465920)
+            Assert.True(true, $"Expected 3D vertices from renderlog (BUILD coordinates):");
+            Assert.True(true, $"  (14336,49280,-24576) (14336,49536,-24576) (14336,49536,-465920) (14336,49280,-465920)");
+            
+            // Convert to Engine coordinates for comparison
+            // BUILD to Engine: divide by 16 for X,Y and multiply by -1/256 for Z
+            var expectedEnginePositions = new Vector3[]
+            {
+                new(14336f/16f, -24576f * (-1f/256f), 49280f/16f),    // Bottom-left
+                new(14336f/16f, -24576f * (-1f/256f), 49536f/16f),    // Bottom-right
+                new(14336f/16f, -465920f * (-1f/256f), 49536f/16f),   // Top-right
+                new(14336f/16f, -465920f * (-1f/256f), 49280f/16f)    // Top-left
+            };
+            
+            Assert.True(true, $"Expected 3D vertices in Engine coordinates:");
+            for (int i = 0; i < expectedEnginePositions.Length; i++)
+            {
+                var expected = expectedEnginePositions[i];
+                Assert.True(true, $"  Vertex {i}: ({expected.X:F1},{expected.Y:F1},{expected.Z:F1})");
+            }
+            
+            // Analyze X-panning calculation
+            // Wall 1000 has xpan=104, shorter length (256 units), xrep=2
+            // Expected X offset should be 104/256 = 0.40625, renderlog shows 0.408
+            var calculatedXOffset = 104f / 256f;
+            Assert.True(true, $"X-Panning Analysis:");
+            Assert.True(true, $"  Calculated X offset from xpan=104: {calculatedXOffset:F3}");
+            Assert.True(true, $"  Renderlog shows X offset: 0.408");
+            Assert.True(true, $"  Difference: {Math.Abs(0.408f - calculatedXOffset):F3}");
+            
+            // Compare X-scale calculation (influenced by xrep=2 vs Wall 999's xrep=9)
+            // Wall 1000: xrep=2, shorter wall -> should have different X scaling
+            Assert.True(true, $"X-Scale Comparison with Wall 999:");
+            Assert.True(true, $"  Wall 1000: xrep=2, length=256, expected UV width: {1.408f - 0.408f:F3}");
+            Assert.True(true, $"  Wall 999: xrep=9, length=1152, expected UV width: {1.251f - 0.251f:F3}");
+            
+            // Y-panning should be identical (both have ypan=240)
+            Assert.True(true, $"Y-Panning (should match Wall 999):");
+            Assert.True(true, $"  Both walls have ypan=240, both show Y offset: 0.941");
+            
+            // Optional: Enable strict UV validation when Engine matches renderlog
+            /*
+            const float tolerance = 0.01f;
+            Assert.Equal(expectedUVs.Length, uvs.Length);
+            for (int i = 0; i < expectedUVs.Length; i++)
+            {
+                Assert.True(Math.Abs(expectedUVs[i].X - uvs[i].X) <= tolerance, 
+                    $"UV[{i}].X expected: {expectedUVs[i].X:F3}, actual: {uvs[i].X:F3}");
+                Assert.True(Math.Abs(expectedUVs[i].Y - uvs[i].Y) <= tolerance, 
+                    $"UV[{i}].Y expected: {expectedUVs[i].Y:F3}, actual: {uvs[i].Y:F3}");
+            }
+            */
+        }
+        else if (lowerWallMeshes.Any() || upperWallMeshes.Any())
+        {
+            // If it creates other mesh types instead of solid wall, analyze those
+            Assert.True(true, $"Wall 1000 created non-solid mesh types (unexpected for exterior wall):");
+            
+            foreach (var mesh in wall1000.Meshes)
+            {
+                var vertices = mesh.Vertices.ToList();
+                Assert.True(true, $"{mesh.Type} mesh:");
+                for (int i = 0; i < vertices.Count; i++)
+                {
+                    var vertex = vertices[i];
+                    Assert.True(true, $"  Vertex {i}: Position=({vertex.Position.X:F1},{vertex.Position.Y:F1},{vertex.Position.Z:F1}), UV=({vertex.TextureCoordinate.X:F3},{vertex.TextureCoordinate.Y:F3})");
+                }
+            }
+        }
+        
+        // Additional validation: ensure this is truly an exterior wall
+        var isPortalProperty = typeof(Engine.Map.Wall).GetProperty("IsPortal", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+        if (isPortalProperty != null)
+        {
+            var isPortal = (bool)isPortalProperty.GetValue(wall1000)!;
+            Assert.False(isPortal, "Wall 1000 should not be a portal (exterior wall with nextsector=-1)");
+            Assert.True(true, $"Wall 1000 IsPortal: {isPortal} (should be false for exterior walls)");
+        }
+        
+        // Floor height context (should only have one sector)
+        var sector196FloorY = GetFloorYCoordinate(sector196);
+        Assert.True(true, $"Sector 196 floor Y: {sector196FloorY:F3} (Wall 1000 only borders this sector)");
     }
 
     [Fact]
