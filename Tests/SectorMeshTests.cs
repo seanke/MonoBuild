@@ -1289,4 +1289,53 @@ public class SectorMeshTests
         var uniqueCStats = allWallCStats.Distinct().OrderBy(x => x).ToList();
         Assert.True(uniqueCStats.Count > 1, $"Should find multiple unique cstat values. Found: [{string.Join(",", uniqueCStats)}]");
     }
+
+    [Fact]
+    public void Sector166_SlopedFloor_GeneratesLowerWalls()
+    {
+        // Sector 166 has a sloped floor (heinum=-1024) that rises above neighboring sectors
+        // This test validates the fix for lower wall generation with sloped floors
+        // From renderlog: Wall 833 connects to Sector 167 and should have a lower wall
+        var group = new GroupFile(new FileInfo("DUKE3D.GRP"));
+        var map = new MapFile(new FileInfo("E1L1.MAP"), group);
+
+        var sectors = GetSectors(map);
+        var sector166 = sectors[166];
+        var walls166 = GetWalls(sector166);
+        
+        // Verify sector has sloped floor
+        var isFloorSlopedProperty = typeof(Sector).GetProperty("IsFloorSloped", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+        var isFloorSloped = (bool)isFloorSlopedProperty!.GetValue(sector166)!;
+        Assert.True(isFloorSloped, "Sector 166 should have a sloped floor");
+        
+        // Count walls with lower wall meshes
+        int lowerWallCount = 0;
+        bool hasWallToSector167 = false;
+        
+        foreach (var wall in walls166)
+        {
+            var lowerWallMeshes = wall.Meshes.Where(m => m.Type == MeshType.LowerWall).ToList();
+            if (lowerWallMeshes.Any())
+            {
+                lowerWallCount++;
+            }
+            
+            // Check for the specific wall connecting to Sector 167 (Wall 833 equivalent from renderlog)
+            var nextSectorProperty = typeof(Engine.Map.Wall).GetProperty("RawNextSector", BindingFlags.NonPublic | BindingFlags.Instance);
+            var nextSector = (short)nextSectorProperty!.GetValue(wall)!;
+            
+            if (nextSector == 167)
+            {
+                hasWallToSector167 = true;
+                Assert.True(lowerWallMeshes.Any(), 
+                    "Wall connecting Sector 166 to Sector 167 should have lower wall mesh due to sloped floor height difference");
+            }
+        }
+        
+        // Validate that sloped floor generates appropriate lower walls
+        Assert.True(lowerWallCount > 0, 
+            "Sector 166 with sloped floor should generate at least one lower wall where it rises above neighbors");
+        Assert.True(hasWallToSector167, 
+            "Should find wall connecting Sector 166 to Sector 167 (corresponds to renderlog Wall 833)");
+    }
 }

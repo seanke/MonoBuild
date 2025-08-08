@@ -239,19 +239,21 @@ public class Wall
         if (_sector.HasParallaxFloor && NextSector.HasParallaxFloor)
             return null;
 
-        var bottom = _sector.FloorYCoordinate;
-        var top = NextSector.FloorYCoordinate;
-
-        if (bottom >= top)
-            return null;
-
         var tile = !IsBottomTextureSwapped ? Tile : NextWall.Tile;
 
-        // Calculate the actual heights at each end of the wall
+        // Calculate the actual heights at each end of the wall (accounting for sloped floors)
         var leftFloorHeight = Utils.GetFloorHeightAt(new Vector2(PositionStart.X, PositionStart.Y), _sector);
         var rightFloorHeight = Utils.GetFloorHeightAt(new Vector2(PositionEnd.X, PositionEnd.Y), _sector);
-        var leftTopHeight = NextSector == null ? top : Utils.GetFloorHeightAt(new Vector2(PositionStart.X, PositionStart.Y), NextSector);
-        var rightTopHeight = NextSector == null ? top : Utils.GetFloorHeightAt(new Vector2(PositionEnd.X, PositionEnd.Y), NextSector);
+        var leftTopHeight = Utils.GetFloorHeightAt(new Vector2(PositionStart.X, PositionStart.Y), NextSector);
+        var rightTopHeight = Utils.GetFloorHeightAt(new Vector2(PositionEnd.X, PositionEnd.Y), NextSector);
+        
+        // Check if lower wall is needed based on actual sloped floor heights
+        // Use minimum current floor vs maximum next floor to ensure we catch all cases where lower wall is visible
+        var currentMinHeight = Math.Min(leftFloorHeight, rightFloorHeight);
+        var nextMaxHeight = Math.Max(leftTopHeight, rightTopHeight);
+        
+        if (currentMinHeight >= nextMaxHeight)
+            return null;
         
         var leftWallHeight = leftTopHeight - leftFloorHeight;
         var rightWallHeight = rightTopHeight - rightFloorHeight;
@@ -278,19 +280,12 @@ public class Wall
             ),
             new(
                 PositionEnd.X,
-                NextSector == null
-                    ? top
-                    : Utils.GetFloorHeightAt(new Vector2(PositionEnd.X, PositionEnd.Y), NextSector),
+                rightTopHeight,
                 PositionEnd.Y
             ),
             new(
                 PositionStart.X,
-                NextSector == null
-                    ? top
-                    : Utils.GetFloorHeightAt(
-                        new Vector2(PositionStart.X, PositionStart.Y),
-                        NextSector
-                    ),
+                leftTopHeight,
                 PositionStart.Y
             )
         };
